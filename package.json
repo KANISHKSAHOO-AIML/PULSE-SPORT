@@ -3,15 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node --dns-result-order=ipv4first ./node_modules/next/dist/bin/next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.53",
+    "@ai-sdk/react": "^3.0.143",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.100.1",
+    "@upstash/redis": "^1.37.0",
+    "ai": "^6.0.141",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.7.0",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

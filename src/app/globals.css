@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
+@theme {
+  --color-cricket: #00FFFF;
+  --color-cricket-dark: #0056b3;
+  --color-football: #39FF14;
+  --color-football-dark: #228b22;
+  --color-dark-bg: #0a0a0a;
+  --color-dark-card: #1e1e1e;
+  --color-dark-border: #333333;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -12,15 +22,318 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── Base ─────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  @apply antialiased;
 }
+
+/* ─── Selection ────────────────────────────────────────────────── */
+::selection {
+  background: rgba(0, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* ─── Custom Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ─── Glassmorphism Card ───────────────────────────────────────── */
+.glass-card {
+  background: rgba(18, 18, 18, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-card:hover {
+  background: rgba(22, 22, 22, 0.8);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.glass-card-strong {
+  background: rgba(18, 18, 18, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Animated Gradient Border ─────────────────────────────────── */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-border-bottom {
+  position: relative;
+}
+
+.gradient-border-bottom::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #00FFFF, #39FF14, #00FFFF, #39FF14);
+  background-size: 300% 100%;
+  animation: gradientShift 6s ease infinite;
+}
+
+/* ─── Glow Utilities ───────────────────────────────────────────── */
+.glow-cricket {
+  text-shadow: 0 0 40px rgba(0, 255, 255, 0.4), 0 0 80px rgba(0, 255, 255, 0.15);
+}
+
+.glow-football {
+  text-shadow: 0 0 40px rgba(57, 255, 20, 0.4), 0 0 80px rgba(57, 255, 20, 0.15);
+}
+
+/* ─── Focus Ring ───────────────────────────────────────────────── */
+.focus-glow:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.4);
+  border-color: rgba(0, 255, 255, 0.6);
+}
+
+/* ─── Floating Quick Nav ───────────────────────────────────────── */
+.quick-nav {
+  position: fixed;
+  top: 76px;
+  right: 20px;
+  z-index: 40;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(18, 18, 18, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Sport Filter Tabs ────────────────────────────────────────── */
+.filter-tab {
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #666;
+}
+
+.filter-tab:hover {
+  color: #aaa;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.filter-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.filter-tab.active-cricket {
+  color: #00FFFF;
+  border-color: rgba(0, 255, 255, 0.3);
+  background: rgba(0, 255, 255, 0.08);
+}
+
+.filter-tab.active-football {
+  color: #39FF14;
+  border-color: rgba(57, 255, 20, 0.3);
+  background: rgba(57, 255, 20, 0.08);
+}
+
+/* ─── Hero Card ────────────────────────────────────────────────── */
+.hero-card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 10, 0.95) 0%,
+    rgba(10, 10, 10, 0.6) 40%,
+    transparent 100%
+  );
+}
+
+/* ─── Mobile Menu ──────────────────────────────────────────────── */
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+.mobile-menu-enter {
+  animation: slideIn 0.3s ease forwards;
+}
+
+.mobile-menu-exit {
+  animation: slideOut 0.3s ease forwards;
+}
+
+/* ─── Pulse Glow Logo ──────────────────────────────────────────── */
+@keyframes logoPulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(57, 255, 20, 0.3)); }
+  50% { filter: drop-shadow(0 0 12px rgba(57, 255, 20, 0.6)); }
+}
+
+.logo-glow {
+  animation: logoPulse 3s ease-in-out infinite;
+}
+
+/* ─── Card Hover Glow ──────────────────────────────────────────── */
+.card-glow-cricket {
+  transition: box-shadow 0.3s ease;
+}
+
+.card-glow-cricket:hover {
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.12), 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.card-glow-football {
+  transition: box-shadow 0.3s ease;
+}
+
+.card-glow-football:hover {
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.12), 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Floating Particles Keyframe ──────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-15px) rotate(5deg); }
+  66% { transform: translateY(8px) rotate(-3deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ─── Live Ticker Marquee ─────────────────────────────────────── */
+@keyframes tickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-track {
+  animation: tickerScroll 30s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* ─── Skeleton Shimmer ─────────────────────────────────────────── */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ─── Fade In Up ───────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Confetti Celebration ─────────────────────────────────────── */
+@keyframes confettiFall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti-piece {
+  position: fixed;
+  top: -10px;
+  z-index: 100;
+  pointer-events: none;
+  animation: confettiFall 3s ease-in forwards;
+}
+
+/* ─── Floating Mini Player ─────────────────────────────────────── */
+@keyframes pipSlideIn {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.pip-player {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 50;
+  width: 320px;
+  border-radius: 16px;
+  overflow: hidden;
+  animation: pipSlideIn 0.4s ease;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+}
+
+/* ─── Radar Chart ──────────────────────────────────────────────── */
+@keyframes radarDraw {
+  from { stroke-dashoffset: 600; }
+  to { stroke-dashoffset: 0; }
+}
+
+.radar-line {
+  stroke-dasharray: 600;
+  animation: radarDraw 1.5s ease forwards;
+}
+
+/* ─── Win Probability Line ─────────────────────────────────────── */
+@keyframes lineGrow {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+.prob-line {
+  stroke-dasharray: 1000;
+  animation: lineGrow 2s ease forwards;
+}
+
+/* ─── Tab Active Indicator ─────────────────────────────────────── */
+.tab-indicator {
+  transition: left 0.3s ease, width 0.3s ease;
+}
+
