@@ -77,7 +77,7 @@ export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
     <motion.div 
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      className={`p-5 rounded-2xl glass-card border ${borderAccentColor} shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl flex flex-col gap-4 relative overflow-hidden z-10`}
+      className={`p-5 rounded-2xl match-card-animated-border card-${sport} border ${borderAccentColor} shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl flex flex-col gap-4 relative overflow-hidden z-10`}
     >
       {/* Background glow for the winning team */}
       <div 
@@ -94,8 +94,8 @@ export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
         <span className="truncate">{match.title}</span>
         <div className="flex items-center gap-2">
           {match.live && (
-            <span className={`flex items-center gap-1.5 text-xs font-semibold ${accentColor} ${bgAccentColor} px-2.5 py-1 rounded-full animate-pulse`}>
-              <Circle className="w-2.5 h-2.5 fill-current" />
+            <span className={`flex items-center gap-1.5 text-xs font-semibold ${accentColor} ${bgAccentColor} px-2.5 py-1 rounded-full live-pulse-ring`}>
+              <Circle className="w-2.5 h-2.5 fill-current animate-pulse" />
               LIVE
             </span>
           )}

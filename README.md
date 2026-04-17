@@ -32,10 +32,18 @@
 
 ## 🌟 Features
 
+### 🎬 Cinematic Hero Section
+- **Typewriter headline animation** with gradient text that spells out "THE PULSE OF SPORTS"
+- Floating sport emoji background with parallax-style bobbing animations
+- Animated stats pills (Live Sports, Active Fans, Real-time, Matches Tracked)
+- Aurora mesh gradient background with grid overlay
+- Dual CTA buttons — "View Live Scores" and "Player Stats ⚡"
+
 ### 🏏⚽ Real-Time Live Scores
 - **Supabase Realtime** subscriptions for instant score updates — no manual refresh needed
 - Dedicated sections for **Cricket** and **Football** with sport-specific UIs
-- Live match status indicators with pulsing animations
+- Live match status indicators with animated pulse rings
+- **Enhanced match cards** with animated glowing borders and sport-specific accent colors
 
 ### 🎮 Immersive 3D Parallax Scenes
 - **React Three Fiber** + **Three.js** powered scroll-reactive 3D backgrounds
@@ -76,10 +84,18 @@
 - Protected routes for commenting, predictions, and fan spaces
 - User profiles with usernames
 
+### 👤 Player Stats Hub
+- Dedicated `/players` page with 12 legendary athletes — **6 Cricket** + **6 Football** icons
+- Interactive player cards with quick-stat previews (runs/goals, centuries/assists, matches/trophies)
+- Full **Player Modal** with career breakdowns across all formats/competitions
+- Animated stat bars, career highlights summary, and optional player video clips
+- Sport toggle with smooth `AnimatePresence` transitions between Cricket & Football
+
 ### 🎨 Premium UI/UX
 - Dark-mode-first design with glassmorphism cards
 - **Framer Motion** animations — page transitions, scroll reveals, micro-interactions
 - Custom loading skeletons, 3D sport-themed loaders
+- **Energy section dividers** with glowing animated spark effects
 - Keyboard shortcuts panel, back-to-top button
 - Live scrolling ticker bar with breaking news
 - Fully responsive across all devices
@@ -244,7 +260,10 @@ VALUES
 ```
 pulse-sports/
 ├── public/
-│   ├── assets/          # Sport images (cricket, football)
+│   ├── assets/
+│   │   ├── cricket/     # Cricket sport images
+│   │   ├── football/    # Football sport images
+│   │   └── players/     # Player video clips (mp4)
 │   └── models/          # 3D model assets
 ├── src/
 │   ├── app/
@@ -259,9 +278,10 @@ pulse-sports/
 │   │   ├── login/       # Authentication page
 │   │   ├── matches/     # Match detail pages (dynamic)
 │   │   ├── news/        # News article pages (dynamic)
+│   │   ├── players/     # ⭐ Player Stats Hub page
 │   │   ├── globals.css  # Global styles & design tokens
 │   │   ├── layout.tsx   # Root layout (Header, Footer, AI, Ticker)
-│   │   ├── page.tsx     # Homepage
+│   │   ├── page.tsx     # Homepage (with Hero Section)
 │   │   └── not-found.tsx# Custom 404 page
 │   ├── components/
 │   │   ├── AIAssistant.tsx        # Floating AI chatbot
@@ -271,17 +291,19 @@ pulse-sports/
 │   │   ├── FloatingVideoPlayer.tsx# PiP video player
 │   │   ├── FootballScene.tsx      # 3D football scene
 │   │   ├── Footer.tsx             # Site footer
-│   │   ├── Header.tsx             # Navigation header
+│   │   ├── Header.tsx             # Navigation header (+ Players link)
+│   │   ├── HeroSection.tsx        # ⭐ Cinematic typewriter hero
 │   │   ├── KeyboardShortcuts.tsx  # Shortcut overlay
 │   │   ├── Leaderboard.tsx        # Community leaderboard
 │   │   ├── LiveTicker.tsx         # Breaking news ticker
 │   │   ├── Loader3D.tsx           # 3D loading spinner
-│   │   ├── MatchCard.tsx          # Match score card
+│   │   ├── MatchCard.tsx          # Match score card (animated borders)
 │   │   ├── ParallaxSportScene.tsx # Scroll-linked 3D wrapper
 │   │   ├── PlayerComparison.tsx   # Radar chart comparison
 │   │   ├── PulsePredictor.tsx     # Match prediction game
 │   │   ├── ScrollAnimationSection.tsx # Scroll-trigger animations
 │   │   ├── SearchOverlay.tsx      # Global search
+│   │   ├── SectionDivider.tsx     # ⭐ Energy section divider
 │   │   ├── ShareButtons.tsx       # Social sharing
 │   │   ├── Skeletons.tsx          # Loading skeletons
 │   │   ├── SportToggle.tsx        # Cricket/Football quick nav
@@ -345,7 +367,7 @@ Contributions are welcome! Here's how to get started:
 ## 🐛 Known Issues & Roadmap
 
 ### Current Limitations
-- Player comparison data is currently hardcoded (mock data)
+- Player stats data is currently hardcoded (mock data for 12 players)
 - Predictions are stored client-side via localStorage
 - Live chat uses polling (2s interval) instead of WebSocket streaming
 
@@ -357,6 +379,8 @@ Contributions are welcome! Here's how to get started:
 - [ ] Dark/Light theme toggle
 - [ ] Native mobile app (React Native)
 - [ ] Integration with live sports data APIs
+- [ ] Dynamic player stats from a live API
+- [ ] Player vs Player comparison tool
 
 ---
 

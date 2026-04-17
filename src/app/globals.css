@@ -337,3 +337,379 @@ body {
   transition: left 0.3s ease, width 0.3s ease;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   PRESENTATION-STUNNING ADDITIONS
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Aurora Mesh Background ──────────────────────────────────── */
+@keyframes auroraShift {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25% { transform: translate(30px, -50px) rotate(45deg) scale(1.15); }
+  50% { transform: translate(-20px, 20px) rotate(90deg) scale(0.95); }
+  75% { transform: translate(40px, 30px) rotate(135deg) scale(1.1); }
+  100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+}
+
+@keyframes auroraShift2 {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1.1); }
+  33% { transform: translate(-40px, -30px) rotate(-60deg) scale(0.9); }
+  66% { transform: translate(30px, 40px) rotate(120deg) scale(1.2); }
+  100% { transform: translate(0, 0) rotate(360deg) scale(1.1); }
+}
+
+@keyframes auroraShift3 {
+  0% { transform: translate(0, 0) rotate(180deg) scale(0.95); }
+  50% { transform: translate(-50px, 20px) rotate(0deg) scale(1.15); }
+  100% { transform: translate(0, 0) rotate(180deg) scale(0.95); }
+}
+
+.hero-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.hero-aurora::before,
+.hero-aurora::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.35;
+}
+
+.hero-aurora::before {
+  width: 600px;
+  height: 600px;
+  top: -10%;
+  left: 10%;
+  background: radial-gradient(circle, #00ffff 0%, transparent 70%);
+  animation: auroraShift 12s ease-in-out infinite;
+}
+
+.hero-aurora::after {
+  width: 500px;
+  height: 500px;
+  bottom: -15%;
+  right: 5%;
+  background: radial-gradient(circle, #39FF14 0%, transparent 70%);
+  animation: auroraShift2 15s ease-in-out infinite;
+}
+
+.hero-aurora-extra {
+  position: absolute;
+  width: 450px;
+  height: 450px;
+  top: 30%;
+  left: 50%;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.2;
+  background: radial-gradient(circle, #ff6b35 0%, transparent 70%);
+  animation: auroraShift3 18s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ─── Animated Gradient Text ──────────────────────────────────── */
+@keyframes gradientTextFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-gradient-text {
+  background: linear-gradient(270deg, #00FFFF, #39FF14, #ff6b35, #00FFFF);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientTextFlow 4s ease infinite;
+}
+
+.gradient-text-cricket {
+  background: linear-gradient(270deg, #00FFFF, #66e0ff, #00FFFF);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientTextFlow 3s ease infinite;
+}
+
+.gradient-text-football {
+  background: linear-gradient(270deg, #39FF14, #7fff00, #39FF14);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientTextFlow 3s ease infinite;
+}
+
+/* ─── Rotating Gradient Border ────────────────────────────────── */
+@keyframes borderRotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.match-card-animated-border {
+  position: relative;
+  background: rgba(18, 18, 18, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid transparent;
+  border-radius: 16px;
+}
+
+.match-card-animated-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  padding: 1px;
+  background: conic-gradient(from var(--angle), transparent 40%, rgba(0, 255, 255, 0.4), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: borderRotate 4s linear infinite;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.match-card-animated-border:hover::before {
+  opacity: 1;
+}
+
+.match-card-animated-border.card-cricket::before {
+  background: conic-gradient(from var(--angle), transparent 40%, rgba(0, 255, 255, 0.5), transparent 60%);
+}
+
+.match-card-animated-border.card-football::before {
+  background: conic-gradient(from var(--angle), transparent 40%, rgba(57, 255, 20, 0.5), transparent 60%);
+}
+
+/* ─── Live Pulse Ring ─────────────────────────────────────────── */
+@keyframes livePulseRing {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.live-pulse-ring {
+  position: relative;
+}
+
+.live-pulse-ring::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  animation: livePulseRing 1.5s ease-out infinite;
+}
+
+/* ─── Energy Section Divider ──────────────────────────────────── */
+@keyframes energyFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes energySpark {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.energy-divider {
+  position: relative;
+  height: 3px;
+  overflow: visible;
+}
+
+.energy-divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #00FFFF 20%, #39FF14 50%, #00FFFF 80%, transparent 100%);
+  background-size: 200% 100%;
+  animation: energyFlow 3s linear infinite;
+  position: relative;
+}
+
+.energy-divider-glow {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 9px;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,255,255,0.15) 20%, rgba(57,255,20,0.15) 50%, rgba(0,255,255,0.15) 80%, transparent 100%);
+  background-size: 200% 100%;
+  animation: energyFlow 3s linear infinite;
+  filter: blur(4px);
+}
+
+/* ─── Scroll Bounce Chevron ───────────────────────────────────── */
+@keyframes scrollBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.7; }
+  50% { transform: translateY(10px); opacity: 1; }
+}
+
+.scroll-chevron {
+  animation: scrollBounce 2s ease-in-out infinite;
+}
+
+/* ─── Typewriter Cursor ───────────────────────────────────────── */
+@keyframes cursorBlink {
+  0%, 100% { border-right-color: transparent; }
+  50% { border-right-color: #00FFFF; }
+}
+
+.typewriter-cursor {
+  border-right: 3px solid #00FFFF;
+  animation: cursorBlink 0.8s step-end infinite;
+  padding-right: 4px;
+}
+
+/* ─── Stat Counter ────────────────────────────────────────────── */
+@keyframes countPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.stat-counter-appear {
+  animation: countPulse 0.4s ease;
+}
+
+/* ─── Floating Emoji ──────────────────────────────────────────── */
+@keyframes floatEmoji {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-20px) rotate(5deg); }
+  50% { transform: translateY(-8px) rotate(-3deg); }
+  75% { transform: translateY(-25px) rotate(7deg); }
+}
+
+/* ─── Player Stats Page ───────────────────────────────────────── */
+.player-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: rgba(18, 18, 18, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+}
+
+.player-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(255,255,255,0.12);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.5),
+    0 0 30px rgba(0,255,255,0.08);
+}
+
+.player-card.sport-cricket:hover {
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.5),
+    0 0 30px rgba(0,255,255,0.12);
+}
+
+.player-card.sport-football:hover {
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.5),
+    0 0 30px rgba(57,255,20,0.12);
+}
+
+.player-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 900;
+  position: relative;
+  overflow: hidden;
+}
+
+.player-avatar.avatar-cricket {
+  background: linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,180,200,0.25));
+  border: 2px solid rgba(0,255,255,0.3);
+  color: #00ffff;
+}
+
+.player-avatar.avatar-football {
+  background: linear-gradient(135deg, rgba(57,255,20,0.15), rgba(20,180,20,0.25));
+  border: 2px solid rgba(57,255,20,0.3);
+  color: #39ff14;
+}
+
+/* Player stats modal overlay */
+.player-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  position: relative;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.stat-bar-fill.fill-cricket {
+  background: linear-gradient(90deg, #00FFFF, #66e0ff);
+}
+
+.stat-bar-fill.fill-football {
+  background: linear-gradient(90deg, #39FF14, #7fff00);
+}
+
+/* Video player container */
+.aura-video-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.aura-video-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ─── Hero Stat Pill ──────────────────────────────────────────── */
+.hero-stat-pill {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 12px 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.hero-stat-pill:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+}
+

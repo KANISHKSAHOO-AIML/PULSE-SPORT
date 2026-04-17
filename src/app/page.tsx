@@ -10,6 +10,8 @@ import { supabase } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import TrendingWidget from "@/components/TrendingWidget";
 import Leaderboard from "@/components/Leaderboard";
+import HeroSection from "@/components/HeroSection";
+import SectionDivider from "@/components/SectionDivider";
 
 // Dynamic import — no SSR to prevent hydration mismatch from scroll-dependent styles
 const ParallaxSportScene = dynamic(
@@ -111,6 +113,11 @@ export default function Home() {
       <SportToggle sport={activeSection} mode="quicknav" />
 
       {/* ══════════════════════════════════════════════════════════════
+          CINEMATIC HERO SECTION
+          ══════════════════════════════════════════════════════════════ */}
+      <HeroSection />
+
+      {/* ══════════════════════════════════════════════════════════════
           CRICKET SECTION — Animation plays BEHIND the match cards
           ══════════════════════════════════════════════════════════════ */}
       <section
@@ -124,7 +131,7 @@ export default function Home() {
         {/* Content layer — on top of the animation */}
         <div className="relative z-10 py-12 md:py-20">
           <div className="container mx-auto px-4 max-w-5xl">
-            {/* Section Title */}
+            {/* Section Title — Enhanced */}
             <motion.div
               className="mb-10"
               initial={{ opacity: 0, y: 40 }}
@@ -137,12 +144,7 @@ export default function Home() {
                 <div>
                   <h2 className="text-3xl md:text-5xl font-black tracking-tight">
                     Cricket{" "}
-                    <span
-                      className="text-cricket"
-                      style={{
-                        textShadow: "0 0 30px rgba(0,255,255,0.3)",
-                      }}
-                    >
+                    <span className="gradient-text-cricket">
                       Live
                     </span>
                   </h2>
@@ -202,8 +204,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Section Divider */}
-      <div className="relative z-10 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
+      {/* ⚡ Energy Section Divider */}
+      <SectionDivider />
 
       {/* ══════════════════════════════════════════════════════════════
           FOOTBALL SECTION — Animation plays BEHIND the match cards
@@ -219,7 +221,7 @@ export default function Home() {
         {/* Content layer */}
         <div className="relative z-10 py-12 md:py-20">
           <div className="container mx-auto px-4 max-w-5xl">
-            {/* Section Title */}
+            {/* Section Title — Enhanced */}
             <motion.div
               className="mb-10"
               initial={{ opacity: 0, y: 40 }}
@@ -232,12 +234,7 @@ export default function Home() {
                 <div>
                   <h2 className="text-3xl md:text-5xl font-black tracking-tight">
                     Football{" "}
-                    <span
-                      className="text-football"
-                      style={{
-                        textShadow: "0 0 30px rgba(57,255,20,0.3)",
-                      }}
-                    >
+                    <span className="gradient-text-football">
                       Live
                     </span>
                   </h2>
