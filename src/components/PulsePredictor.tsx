@@ -27,48 +27,84 @@ export default function PulsePredictor({ match }: PulsePredictorProps) {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
   }, []);
 
-  // Load prediction from localStorage (fallback if no DB table)
+  // Load prediction from Supabase first, fallback to localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(`prediction-${match.id}`);
-    if (stored) {
-      const data = JSON.parse(stored);
-      setPrediction(data.pick);
-      setSubmitted(true);
-    }
+    const loadPrediction = async () => {
+      // Try Supabase first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("predictions")
+          .select("predicted_winner")
+          .eq("user_id", user.id)
+          .eq("match_id", match.id)
+          .maybeSingle();
+        if (data) {
+          setPrediction(data.predicted_winner);
+          setSubmitted(true);
+        }
+      }
 
-    // Load community votes from localStorage
-    const votes = JSON.parse(localStorage.getItem(`votes-${match.id}`) || '{"teamA":0,"teamB":0,"draw":0}');
-    setCommunityVotes(votes);
+      // Fallback to localStorage
+      if (!submitted) {
+        const stored = localStorage.getItem(`prediction-${match.id}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setPrediction(parsed.pick);
+          setSubmitted(true);
+        }
+      }
+    };
+    loadPrediction();
+
+    // Load community votes from API
+    const loadVotes = async () => {
+      try {
+        const res = await fetch(`/api/predictions?matchId=${match.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.fallback) {
+            setCommunityVotes({ teamA: data.teamA || 0, teamB: data.teamB || 0, draw: data.draw || 0 });
+            return;
+          }
+        }
+      } catch {}
+      // Fallback to localStorage
+      const votes = JSON.parse(localStorage.getItem(`votes-${match.id}`) || '{"teamA":0,"teamB":0,"draw":0}');
+      setCommunityVotes(votes);
+    };
+    loadVotes();
   }, [match.id]);
 
-  const submitPrediction = (pick: string) => {
+  const submitPrediction = async (pick: string) => {
     if (submitted) return;
     
     setPrediction(pick);
     setSubmitted(true);
 
-    // Store locally
-    localStorage.setItem(`prediction-${match.id}`, JSON.stringify({ pick, matchId: match.id, timestamp: Date.now() }));
-
-    // Update community votes
+    // Update community votes optimistically
     const newVotes = { ...communityVotes };
     if (pick === match.team_a) newVotes.teamA++;
     else if (pick === match.team_b) newVotes.teamB++;
     else newVotes.draw++;
     setCommunityVotes(newVotes);
-    localStorage.setItem(`votes-${match.id}`, JSON.stringify(newVotes));
 
     // Brief confetti
     setShowConfetti(true);
     setTimeout(() => setShowConfetti(false), 3000);
 
-    // Try Supabase insert (fails gracefully if table doesn't exist)
+    // Save to Supabase (primary) + localStorage (fallback)
+    localStorage.setItem(`prediction-${match.id}`, JSON.stringify({ pick, matchId: match.id, timestamp: Date.now() }));
+    localStorage.setItem(`votes-${match.id}`, JSON.stringify(newVotes));
+
     if (user) {
-      supabase.from("predictions").insert({
-        user_id: user.id,
-        match_id: match.id,
-        predicted_winner: pick,
-      }).then(() => {});
+      try {
+        await supabase.from("predictions").upsert({
+          user_id: user.id,
+          match_id: parseInt(match.id, 10),
+          predicted_winner: pick,
+        }, { onConflict: "user_id,match_id" });
+      } catch {}
     }
   };
 
@@ -82,7 +118,7 @@ export default function PulsePredictor({ match }: PulsePredictorProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.15 }}
-      className="glass-card rounded-2xl border border-dark-border p-5 relative overflow-hidden"
+      className="glass-depth-2 rounded-2xl p-5 relative overflow-hidden"
     >
       {/* Confetti */}
       {showConfetti && (

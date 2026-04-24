@@ -45,6 +45,8 @@ export default function Footer() {
                 { href: "/", label: "Live Scores" },
                 { href: "/news", label: "Sports News" },
                 { href: "/highlights", label: "Highlights" },
+                { href: "/players", label: "Player Stats" },
+                { href: "/profile", label: "My Profile" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link

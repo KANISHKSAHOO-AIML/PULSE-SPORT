@@ -3,14 +3,19 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-import { PlayCircle, Eye, Flame } from "lucide-react";
+import { PlayCircle, Eye, Flame, Clapperboard } from "lucide-react";
 import { supabase } from "@/utils/supabase/client";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { HeroSkeleton, VideoCardSkeleton } from "@/components/Skeletons";
 
 const ParallaxSportScene = dynamic(
   () => import("@/components/ParallaxSportScene"),
+  { ssr: false }
+);
+
+const ReelsView = dynamic(
+  () => import("@/components/ReelsView"),
   { ssr: false }
 );
 
@@ -74,7 +79,7 @@ function VideoCard({ video, index }: { video: any; index: number }) {
       viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: 0.4, delay: index * 0.08 }}
     >
-      <Link href={`/highlights/${video.id}`} className={`group block glass-card rounded-2xl overflow-hidden border border-dark-border hover:border-zinc-600 transition-all ${glow}`}>
+      <Link href={`/highlights/${video.id}`} className={`group block glass-depth-2 rounded-2xl overflow-hidden hover:border-zinc-600 transition-all ${glow}`}>
         <div className="relative aspect-video overflow-hidden">
           <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -102,7 +107,7 @@ function HeroHighlight({ video, sport }: { video: any; sport: string }) {
   const accent = sport === "cricket" ? "text-cricket" : "text-football";
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-6">
-      <Link href={`/highlights/${video.id}`} className="group block relative rounded-2xl overflow-hidden glass-card border border-dark-border hover:border-zinc-600 transition-all">
+      <Link href={`/highlights/${video.id}`} className="group block relative rounded-2xl overflow-hidden glass-depth-2 hover:border-zinc-600 transition-all">
         <div className="relative h-[260px] md:h-[360px] overflow-hidden">
           <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 brightness-75" />
           <div className="hero-card-overlay absolute inset-0" />
@@ -188,7 +193,7 @@ function SportHighlightSection({ sport, highlights, parallaxSport }: { sport: "c
               )}
             </>
           ) : (
-            <div className="text-zinc-500 text-center py-8 glass-card rounded-2xl p-6">
+            <div className="text-zinc-500 text-center py-8 glass-depth-2 rounded-2xl p-6">
               No {sport} highlights right now.
             </div>
           )}
@@ -202,6 +207,7 @@ export default function HighlightsPage() {
   const [highlights, setHighlights] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<"cricket" | "football">("cricket");
+  const [reelsOpen, setReelsOpen] = useState(false);
 
   useEffect(() => {
     const fetchHighlights = async () => {
@@ -264,6 +270,14 @@ export default function HighlightsPage() {
               <span className="text-football text-xs font-bold uppercase tracking-widest">Top Moments</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight">Video Highlights</h1>
+            {/* Reels Mode Toggle */}
+            <button
+              onClick={() => setReelsOpen(true)}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20 hover:bg-purple-500/25 transition-all hover:scale-105 active:scale-95"
+            >
+              <Clapperboard className="w-4 h-4" />
+              Reels Mode 🔥
+            </button>
           </motion.div>
         </div>
       </div>
@@ -289,6 +303,16 @@ export default function HighlightsPage() {
           <SportHighlightSection sport="football" highlights={footballHighlights} parallaxSport="football" />
         </>
       )}
+
+      {/* Snackable Reels Overlay */}
+      <AnimatePresence>
+        {reelsOpen && highlights.length > 0 && (
+          <ReelsView
+            highlights={highlights.filter(h => h.video_url)}
+            onClose={() => setReelsOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

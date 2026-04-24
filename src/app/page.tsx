@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import SportToggle from "@/components/SportToggle";
@@ -18,6 +18,21 @@ const ParallaxSportScene = dynamic(
   () => import("@/components/ParallaxSportScene"),
   { ssr: false }
 );
+
+// Zero-friction 3D fallback — renders instantly as CSS shimmer
+function Scene3DFallback({ sport }: { sport: string }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <div className={`absolute inset-0 opacity-20 ${
+        sport === 'cricket'
+          ? 'bg-gradient-to-br from-cyan-900/30 via-transparent to-cyan-500/10'
+          : 'bg-gradient-to-br from-green-900/30 via-transparent to-green-500/10'
+      }`}>
+        <div className="absolute inset-0 skeleton-shimmer" />
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const [matches, setMatches] = useState<any[]>([]);
@@ -125,8 +140,10 @@ export default function Home() {
         ref={cricketRef}
         className="relative min-h-screen overflow-hidden"
       >
-        {/* Parallax background scene */}
-        <ParallaxSportScene sport="cricket" scrollProgress={cricketScroll} />
+        {/* Parallax background scene — lazy loaded with zero-friction fallback */}
+        <Suspense fallback={<Scene3DFallback sport="cricket" />}>
+          <ParallaxSportScene sport="cricket" scrollProgress={cricketScroll} />
+        </Suspense>
 
         {/* Content layer — on top of the animation */}
         <div className="relative z-10 py-12 md:py-20">
@@ -215,8 +232,10 @@ export default function Home() {
         ref={footballRef}
         className="relative min-h-screen overflow-hidden"
       >
-        {/* Parallax background scene */}
-        <ParallaxSportScene sport="football" scrollProgress={footballScroll} />
+        {/* Parallax background scene — lazy loaded with zero-friction fallback */}
+        <Suspense fallback={<Scene3DFallback sport="football" />}>
+          <ParallaxSportScene sport="football" scrollProgress={footballScroll} />
+        </Suspense>
 
         {/* Content layer */}
         <div className="relative z-10 py-12 md:py-20">

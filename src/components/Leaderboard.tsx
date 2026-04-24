@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Trophy, Medal, TrendingUp } from "lucide-react";
+import { supabase } from "@/utils/supabase/client";
 
 interface LeaderboardEntry {
   username: string;
@@ -27,16 +28,41 @@ const RANK_COLORS = ["text-yellow-400", "text-zinc-300", "text-amber-600"];
 export default function Leaderboard() {
   const [data, setData] = useState<LeaderboardEntry[]>(MOCK_LEADERBOARD);
 
-  // Could fetch from Supabase leaderboard view in the future
-  // useEffect(() => { ... }, []);
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const { data: leaderboardData, error } = await supabase
+          .from("leaderboard")
+          .select("*")
+          .limit(7);
+        
+        if (leaderboardData && leaderboardData.length > 0) {
+          const entries: LeaderboardEntry[] = leaderboardData.map(p => ({
+            username: p.username || "Anonymous",
+            total_points: p.total_points || 0,
+            correct_predictions: p.correct_predictions || 0,
+            total_predictions: p.total_predictions || 0,
+          }));
+          setData(entries);
+        }
+      } catch {
+        // Keep mock data on error
+      }
+    };
+    fetchLeaderboard();
+  }, []);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
-      className="glass-card rounded-2xl border border-dark-border overflow-hidden"
+      whileHover={{
+        y: -4,
+        boxShadow: "0 20px 60px -15px rgba(0,0,0,0.5), 0 0 30px rgba(234,179,8,0.05)",
+      }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="glass-depth-2 rounded-2xl overflow-hidden"
     >
       {/* Header */}
       <div className="p-4 border-b border-zinc-800 flex items-center gap-2">

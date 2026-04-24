@@ -218,12 +218,31 @@ export default function NewsPage() {
 
   useEffect(() => {
     const fetchNews = async () => {
-      const { data, error } = await supabase.from("news").select("*").order("created_at", { ascending: false });
-      if (error || !data || data.length === 0) {
-        setNewsArticles(MOCK_NEWS);
-      } else {
-        setNewsArticles(data);
-      }
+      // 1. Try Supabase admin-published articles first
+      const { data: supaData } = await supabase
+        .from("news")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      // 2. Try real ESPN news API
+      let espnArticles: any[] = [];
+      try {
+        const res = await fetch("/api/sports-news");
+        if (res.ok) {
+          const json = await res.json();
+          espnArticles = json.articles || [];
+        }
+      } catch (_) {}
+
+      // 3. Merge: Supabase first, then ESPN, then fallback to mock
+      const merged = [
+        ...(supaData || []),
+        ...espnArticles.filter(
+          (e) => !(supaData || []).some((s: any) => s.title === e.title)
+        ),
+      ];
+
+      setNewsArticles(merged.length > 0 ? merged : MOCK_NEWS);
       setLoading(false);
     };
     fetchNews();

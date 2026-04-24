@@ -7,7 +7,8 @@ import MatchCard from "@/components/MatchCard";
 import WinProbability from "@/components/WinProbability";
 import PlayerComparison from "@/components/PlayerComparison";
 import PulsePredictor from "@/components/PulsePredictor";
-import { Send, Users, Lock, MessageCircle, X, BarChart3, Trophy, MessageSquare } from "lucide-react";
+import LiveTimeline from "@/components/LiveTimeline";
+import { Send, Users, Lock, MessageCircle, X, BarChart3, Trophy, MessageSquare, Activity } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,7 +16,7 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"fanspace" | "analytics" | "predict">("fanspace");
+  const [activeTab, setActiveTab] = useState<"fanspace" | "timeline" | "analytics" | "predict">("fanspace");
   
   // Auth state
   const [user, setUser] = useState<any>(null);
@@ -218,6 +219,7 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
 
   const TABS = [
     { key: "fanspace" as const, label: match.live ? "Fan Space" : "Debate", icon: MessageSquare },
+    { key: "timeline" as const, label: match.sport === "cricket" ? "Ball-by-Ball" : "Timeline", icon: Activity },
     { key: "analytics" as const, label: "Analytics", icon: BarChart3 },
     { key: "predict" as const, label: "Predict", icon: Trophy },
   ];
@@ -359,6 +361,25 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
                 </>
               )}
             </motion.section>
+          )}
+
+          {/* ─── Timeline Tab ─── */}
+          {activeTab === "timeline" && (
+            <motion.div
+              key="timeline"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LiveTimeline
+                matchId={match.id}
+                sport={match.sport}
+                teamA={match.team_a}
+                teamB={match.team_b}
+                isLive={match.live}
+              />
+            </motion.div>
           )}
 
           {/* ─── Analytics Tab ─── */}

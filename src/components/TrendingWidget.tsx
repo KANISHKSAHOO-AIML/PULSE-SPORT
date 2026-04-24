@@ -53,8 +53,12 @@ export default function TrendingWidget() {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
-      className="glass-card rounded-2xl border border-dark-border overflow-hidden"
+      whileHover={{
+        y: -4,
+        boxShadow: "0 20px 60px -15px rgba(0,0,0,0.5), 0 0 30px rgba(249,115,22,0.05)",
+      }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="glass-depth-2 rounded-2xl overflow-hidden"
     >
       {/* Header */}
       <div className="p-4 border-b border-zinc-800 flex items-center gap-2">
