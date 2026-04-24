@@ -78,6 +78,7 @@ function ArticleCard({ article, index }: { article: any; index: number }) {
   const accent = article.sport === "cricket" ? "text-cricket" : "text-football";
   const badge = article.sport === "cricket" ? "bg-cricket/10 text-cricket border-cricket/30" : "bg-football/10 text-football border-football/30";
   const glow = article.sport === "cricket" ? "card-glow-cricket" : "card-glow-football";
+  const readingTime = Math.max(1, Math.ceil((article.summary?.length || 100) / 200));
 
   return (
     <motion.article
@@ -89,16 +90,23 @@ function ArticleCard({ article, index }: { article: any; index: number }) {
     >
       <div className="relative h-48 overflow-hidden">
         <img src={article.image_url} alt={article.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 flex gap-2">
           <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border ${badge}`}>
             {article.sport}
           </span>
+          {article.featured && (
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md bg-red-500/20 text-red-400 border border-red-500/30">
+              Featured
+            </span>
+          )}
         </div>
       </div>
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2.5">
           <Clock className="w-3.5 h-3.5" />
           <span>{article.time_ago}</span>
+          <span className="text-zinc-700">•</span>
+          <span>{readingTime} min read</span>
         </div>
         <h3 className="text-lg font-bold mb-2 line-clamp-2 leading-snug group-hover:text-white transition-colors">
           {article.title}

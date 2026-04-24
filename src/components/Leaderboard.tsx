@@ -27,6 +27,7 @@ const RANK_COLORS = ["text-yellow-400", "text-zinc-300", "text-amber-600"];
 
 export default function Leaderboard() {
   const [data, setData] = useState<LeaderboardEntry[]>(MOCK_LEADERBOARD);
+  const [isRealData, setIsRealData] = useState(false);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -44,6 +45,7 @@ export default function Leaderboard() {
             total_predictions: p.total_predictions || 0,
           }));
           setData(entries);
+          setIsRealData(true);
         }
       } catch {
         // Keep mock data on error
@@ -68,9 +70,16 @@ export default function Leaderboard() {
       <div className="p-4 border-b border-zinc-800 flex items-center gap-2">
         <Trophy className="w-4 h-4 text-yellow-500" />
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">Pulse Leaderboard</h3>
-        <span className="ml-auto text-[10px] text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full font-bold">
-          Top Predictors
-        </span>
+        {!isRealData && (
+          <span className="ml-auto text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-bold border border-amber-500/20">
+            Sample
+          </span>
+        )}
+        {isRealData && (
+          <span className="ml-auto text-[10px] text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full font-bold">
+            Top Predictors
+          </span>
+        )}
       </div>
 
       {/* Entries */}

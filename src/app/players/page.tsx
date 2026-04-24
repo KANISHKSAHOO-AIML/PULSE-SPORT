@@ -532,6 +532,25 @@ function PlayerModal({
 export default function PlayersPage() {
   const [activeSport, setActiveSport] = useState<"cricket" | "football">("cricket");
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [liveScorers, setLiveScorers] = useState<any[]>([]);
+  const [liveScorersLoading, setLiveScorersLoading] = useState(true);
+
+  // Fetch real-time top scorers from Football-Data.org
+  useEffect(() => {
+    const fetchLiveData = async () => {
+      try {
+        const res = await fetch("/api/players?sport=football");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.players && json.players.length > 0) {
+            setLiveScorers(json.players);
+          }
+        }
+      } catch {}
+      setLiveScorersLoading(false);
+    };
+    fetchLiveData();
+  }, []);
 
   const players = activeSport === "cricket" ? CRICKET_PLAYERS : FOOTBALL_PLAYERS;
   const accent = activeSport === "cricket" ? "cricket" : "football";
@@ -695,6 +714,82 @@ export default function PlayersPage() {
           </AnimatePresence>
         </div>
       </section>
+
+      {/* Live Top Scorers — from Football-Data.org API */}
+      {activeSport === "football" && liveScorers.length > 0 && (
+        <section className="py-8 md:py-12">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-2xl">📊</span>
+                <div>
+                  <h2 className="text-2xl font-black tracking-tight">
+                    Premier League{" "}
+                    <span className="text-football" style={{ textShadow: "0 0 20px rgba(57,255,20,0.3)" }}>
+                      Top Scorers
+                    </span>
+                  </h2>
+                  <p className="text-zinc-500 text-xs mt-0.5">Live data from Football-Data.org API</p>
+                </div>
+                <span className="ml-auto text-[9px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full font-bold border border-green-500/20 uppercase tracking-wider">
+                  Live API
+                </span>
+              </div>
+
+              <div className="glass-card rounded-2xl border border-dark-border overflow-hidden">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-2 px-5 py-3 border-b border-zinc-800 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                  <span className="col-span-1">#</span>
+                  <span className="col-span-5">Player</span>
+                  <span className="col-span-2 text-center">Team</span>
+                  <span className="col-span-1 text-center">Apps</span>
+                  <span className="col-span-1 text-center">⚽</span>
+                  <span className="col-span-1 text-center">🅰️</span>
+                  <span className="col-span-1 text-center">Pen</span>
+                </div>
+
+                {/* Player Rows */}
+                {liveScorers.slice(0, 15).map((scorer: any, i: number) => (
+                  <motion.div
+                    key={scorer.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.03 }}
+                    className={`grid grid-cols-12 gap-2 px-5 py-3 items-center hover:bg-white/[0.02] transition-colors ${
+                      i < 3 ? "border-l-2 border-l-football" : "border-l-2 border-l-transparent"
+                    } ${i < liveScorers.length - 1 ? "border-b border-zinc-800/50" : ""}`}
+                  >
+                    <span className={`col-span-1 text-sm font-bold ${
+                      i === 0 ? "text-yellow-400" : i === 1 ? "text-zinc-300" : i === 2 ? "text-amber-600" : "text-zinc-600"
+                    }`}>
+                      {i + 1}
+                    </span>
+                    <div className="col-span-5 flex items-center gap-2 min-w-0">
+                      {scorer.teamCrest && (
+                        <img src={scorer.teamCrest} alt="" className="w-5 h-5 object-contain shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{scorer.name}</p>
+                        <p className="text-[9px] text-zinc-600">{scorer.nationality} • {scorer.position}</p>
+                      </div>
+                    </div>
+                    <span className="col-span-2 text-center text-[10px] text-zinc-400 font-medium">{scorer.team}</span>
+                    <span className="col-span-1 text-center text-xs text-zinc-400">{scorer.playedMatches}</span>
+                    <span className="col-span-1 text-center text-sm font-black text-white">{scorer.goals}</span>
+                    <span className="col-span-1 text-center text-xs text-zinc-400">{scorer.assists}</span>
+                    <span className="col-span-1 text-center text-xs text-zinc-500">{scorer.penalties}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
 
       {/* Player Modal */}
       <AnimatePresence>

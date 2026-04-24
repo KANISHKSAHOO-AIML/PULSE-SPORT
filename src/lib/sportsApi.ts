@@ -38,7 +38,7 @@ export async function fetchLiveCricketMatches(): Promise<CricketMatch[]> {
   
   try {
     const res = await fetch(`${CRICKET_API_BASE}/currentMatches?apikey=${key}&offset=0`, {
-      next: { revalidate: 60 }, // Cache for 60s
+      next: { revalidate: 120 }, // Cache for 2min to reduce API load
     });
     
     if (!res.ok) return [];
@@ -94,7 +94,7 @@ export async function fetchLiveFootballMatches(): Promise<FootballMatch[]> {
   try {
     const res = await fetch(`${FOOTBALL_API_BASE}/matches?status=LIVE,IN_PLAY,PAUSED`, {
       headers: { "X-Auth-Token": key },
-      next: { revalidate: 60 },
+      next: { revalidate: 120 }, // 2min cache
     });
     
     if (!res.ok) return [];
@@ -113,7 +113,7 @@ export async function fetchTodayFootballMatches(): Promise<FootballMatch[]> {
     const today = new Date().toISOString().split("T")[0];
     const res = await fetch(`${FOOTBALL_API_BASE}/matches?dateFrom=${today}&dateTo=${today}`, {
       headers: { "X-Auth-Token": key },
-      next: { revalidate: 300 },
+      next: { revalidate: 600 }, // 10min cache for scheduled matches
     });
     
     if (!res.ok) return [];
@@ -131,7 +131,7 @@ export async function fetchFootballStandings(competitionCode: string = "PL") {
   try {
     const res = await fetch(`${FOOTBALL_API_BASE}/competitions/${competitionCode}/standings`, {
       headers: { "X-Auth-Token": key },
-      next: { revalidate: 3600 },
+      next: { revalidate: 7200 }, // 2hr cache for standings
     });
     
     if (!res.ok) return null;

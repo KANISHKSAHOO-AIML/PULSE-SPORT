@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Zap, Target, AlertTriangle, Trophy, Clock, ChevronDown } from "lucide-react";
+import { supabase } from "@/utils/supabase/client";
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -42,32 +43,22 @@ const EVENT_STYLES: Record<string, { bg: string; border: string; icon: string; g
 };
 
 /* ═══════════════════════════════════════════════════════════════
-   DEMO EVENTS (used when no real API is connected)
+   FALLBACK EVENTS (shown ONLY when no DB data exists)
    ═══════════════════════════════════════════════════════════════ */
-const CRICKET_DEMO: TimelineEvent[] = [
+const CRICKET_FALLBACK: TimelineEvent[] = [
   { id: "c1", time: "19.6", type: "six", title: "SIX! Over the stands!", emoji: "6️⃣", description: "Massive hit over long-on! The crowd goes wild!", impact: "high" },
   { id: "c2", time: "19.5", type: "boundary", title: "FOUR through covers", emoji: "4️⃣", description: "Elegant drive through the off-side gap", impact: "medium" },
   { id: "c3", time: "19.4", type: "dot", title: "Dot ball", emoji: "⚫", description: "Good yorker, defended back to the bowler", impact: "low" },
   { id: "c4", time: "19.3", type: "wicket", title: "WICKET! Caught behind!", emoji: "🔴", description: "Edge found! Keeper takes a sharp catch diving right", impact: "high" },
   { id: "c5", time: "19.2", type: "run", title: "Single taken", emoji: "🏃", description: "Pushed to mid-on for a quick single", impact: "low" },
-  { id: "c6", time: "19.1", type: "boundary", title: "FOUR! Pulled away!", emoji: "4️⃣", description: "Short ball dispatched to the square leg boundary", impact: "medium" },
-  { id: "c7", time: "18.6", type: "milestone", title: "50 up! Half-century!", emoji: "🏆", description: "Brilliant knock under pressure. 50 off 32 balls", impact: "high" },
-  { id: "c8", time: "18.5", type: "six", title: "SIX! Into the second tier!", emoji: "6️⃣", description: "Stepped out and lofted over long-off. Incredible power!", impact: "high" },
-  { id: "c9", time: "18.4", type: "run", title: "Two runs", emoji: "🏃", description: "Worked to deep midwicket, good running between the wickets", impact: "low" },
-  { id: "c10", time: "18.3", type: "dot", title: "Dot ball — beaten!", emoji: "⚫", description: "Outside off, swinging away. Close to the edge!", impact: "low" },
 ];
 
-const FOOTBALL_DEMO: TimelineEvent[] = [
+const FOOTBALL_FALLBACK: TimelineEvent[] = [
   { id: "f1", time: "89'", type: "goal", title: "GOOOAL!! Late winner!", emoji: "⚽", description: "Header from the corner! The substitute makes an instant impact!", impact: "high" },
   { id: "f2", time: "82'", type: "card", title: "Yellow Card", emoji: "🟨", description: "Late tackle from behind. Lucky not to see red", impact: "medium" },
   { id: "f3", time: "76'", type: "save", title: "Amazing save!", emoji: "🧤", description: "Point-blank save! The keeper denies what seemed a certain goal", impact: "high" },
-  { id: "f4", time: "68'", type: "normal", title: "Substitution", emoji: "🔄", description: "Fresh legs brought on to change the game", impact: "low" },
-  { id: "f5", time: "55'", type: "goal", title: "GOAL! Equalizer!", emoji: "⚽", description: "Brilliant counter-attack! Cool finish into the bottom corner", impact: "high" },
-  { id: "f6", time: "45'", type: "normal", title: "Half Time", emoji: "⏸️", description: "End of the first half. Tactical battle so far", impact: "low" },
-  { id: "f7", time: "38'", type: "save", title: "Double save!", emoji: "🧤", description: "First shot saved, rebound blocked too! Incredible reflexes", impact: "medium" },
-  { id: "f8", time: "23'", type: "goal", title: "GOAL! Opening the scoring!", emoji: "⚽", description: "Curling free-kick from 25 yards! Top corner, no chance for the keeper", impact: "high" },
-  { id: "f9", time: "15'", type: "card", title: "Yellow Card", emoji: "🟨", description: "Professional foul to stop a dangerous counter-attack", impact: "medium" },
-  { id: "f10", time: "1'", type: "normal", title: "Kick Off!", emoji: "📣", description: "And we're underway! The atmosphere is electric!", impact: "low" },
+  { id: "f4", time: "55'", type: "goal", title: "GOAL! Equalizer!", emoji: "⚽", description: "Brilliant counter-attack! Cool finish into the bottom corner", impact: "high" },
+  { id: "f5", time: "23'", type: "goal", title: "GOAL! Opening the scoring!", emoji: "⚽", description: "Curling free-kick from 25 yards! Top corner, no chance for the keeper", impact: "high" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -112,16 +103,122 @@ function FanEmotionMeter({ events, teamA, teamB }: { events: TimelineEvent[]; te
 export default function LiveTimeline({ matchId, sport, teamA, teamB, isLive }: LiveTimelineProps) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [dataSource, setDataSource] = useState<"live" | "fallback">("live");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Load demo events (replace with real API in Phase 5)
+  // Fetch timeline events from Supabase
   useEffect(() => {
-    const demo = sport === "cricket" ? CRICKET_DEMO : FOOTBALL_DEMO;
-    setEvents(demo);
-  }, [sport]);
+    const fetchEvents = async () => {
+      try {
+        // Try to fetch from timeline_events table
+        const { data, error } = await supabase
+          .from("timeline_events")
+          .select("*")
+          .eq("match_id", matchId)
+          .order("created_at", { ascending: false });
+
+        if (data && data.length > 0) {
+          const mapped: TimelineEvent[] = data.map((e: any) => ({
+            id: e.id,
+            time: e.event_time || e.time || "—",
+            type: e.event_type || e.type || "normal",
+            title: e.title,
+            description: e.description || "",
+            emoji: e.emoji || EVENT_STYLES[e.event_type || e.type || "normal"]?.icon || "📌",
+            impact: e.impact || "low",
+          }));
+          setEvents(mapped);
+          setDataSource("live");
+        } else {
+          // Try to check if match has a timeline_events JSONB column
+          const { data: matchData } = await supabase
+            .from("matches")
+            .select("timeline_events")
+            .eq("id", matchId)
+            .single();
+
+          if (matchData?.timeline_events && Array.isArray(matchData.timeline_events) && matchData.timeline_events.length > 0) {
+            setEvents(matchData.timeline_events);
+            setDataSource("live");
+          } else {
+            // Fallback to demo data
+            const fallback = sport === "cricket" ? CRICKET_FALLBACK : FOOTBALL_FALLBACK;
+            setEvents(fallback);
+            setDataSource("fallback");
+          }
+        }
+      } catch {
+        // Table might not exist — use fallback
+        const fallback = sport === "cricket" ? CRICKET_FALLBACK : FOOTBALL_FALLBACK;
+        setEvents(fallback);
+        setDataSource("fallback");
+      }
+      setLoading(false);
+    };
+
+    fetchEvents();
+
+    // For live matches, poll every 10s
+    if (isLive) {
+      const interval = setInterval(fetchEvents, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [matchId, sport, isLive]);
+
+  // Real-time subscription for live matches
+  useEffect(() => {
+    if (!isLive) return;
+    
+    const channel = supabase
+      .channel(`timeline_${matchId}`)
+      .on("postgres_changes", { 
+        event: "INSERT", 
+        schema: "public", 
+        table: "timeline_events",
+        filter: `match_id=eq.${matchId}` 
+      }, (payload) => {
+        const e = payload.new as any;
+        const mapped: TimelineEvent = {
+          id: e.id,
+          time: e.event_time || e.time || "—",
+          type: e.event_type || e.type || "normal",
+          title: e.title,
+          description: e.description || "",
+          emoji: e.emoji || EVENT_STYLES[e.event_type || e.type || "normal"]?.icon || "📌",
+          impact: e.impact || "low",
+        };
+        setEvents(prev => [mapped, ...prev]);
+        setDataSource("live");
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [matchId, isLive]);
 
   const displayEvents = showAll ? events : events.slice(0, 5);
   const isCricket = sport === "cricket";
+
+  if (loading) {
+    return (
+      <div className="glass-card rounded-2xl border border-dark-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-zinc-800">
+          <div className="h-5 w-32 bg-zinc-800 rounded animate-pulse" />
+        </div>
+        <div className="px-5 py-4 space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="flex gap-3 animate-pulse">
+              <div className="w-4 h-4 bg-zinc-800 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-zinc-800 rounded w-3/4" />
+                <div className="h-3 bg-zinc-800/50 rounded w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -147,7 +244,14 @@ export default function LiveTimeline({ matchId, sport, teamA, teamB, isLive }: L
             <p className="text-[10px] text-zinc-600">{teamA} vs {teamB}</p>
           </div>
         </div>
-        <span className="text-[10px] text-zinc-600 font-mono">{events.length} events</span>
+        <div className="flex items-center gap-2">
+          {dataSource === "fallback" && (
+            <span className="text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-amber-500/20">
+              Sample Data
+            </span>
+          )}
+          <span className="text-[10px] text-zinc-600 font-mono">{events.length} events</span>
+        </div>
       </div>
 
       {/* Emotion Meter */}
@@ -223,6 +327,15 @@ export default function LiveTimeline({ matchId, sport, teamA, teamB, isLive }: L
             <ChevronDown className="w-3 h-3" />
             Show {events.length - 5} more events
           </button>
+        )}
+
+        {/* No events state */}
+        {events.length === 0 && (
+          <div className="text-center py-8">
+            <Activity className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+            <p className="text-zinc-500 text-sm font-medium">No timeline events yet</p>
+            <p className="text-zinc-600 text-xs mt-1">Events will appear here as the match progresses</p>
+          </div>
         )}
       </div>
     </motion.div>

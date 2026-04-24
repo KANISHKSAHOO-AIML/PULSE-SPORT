@@ -211,11 +211,26 @@ export default function HighlightsPage() {
 
   useEffect(() => {
     const fetchHighlights = async () => {
+      // 1. Try YouTube API route first
+      try {
+        const res = await fetch("/api/highlights");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.highlights && json.highlights.length > 0) {
+            setHighlights(json.highlights);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {}
+
+      // 2. Try Supabase admin-curated highlights
       const { data, error } = await supabase.from("highlights").select("*").order("created_at", { ascending: false });
-      if (error || !data || data.length === 0) {
-        setHighlights(MOCK_HIGHLIGHTS);
-      } else {
+      if (!error && data && data.length > 0) {
         setHighlights(data);
+      } else {
+        // 3. Fallback to mock data
+        setHighlights(MOCK_HIGHLIGHTS);
       }
       setLoading(false);
     };

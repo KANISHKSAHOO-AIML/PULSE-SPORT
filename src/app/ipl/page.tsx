@@ -31,7 +31,7 @@ export default function IPLPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const currentSeason = IPL_SEASONS.find(s => s.year === 2025);
+  const currentSeason = IPL_SEASONS.find(s => s.year === 2026);
   const historicalSeasons = [...IPL_SEASONS].reverse();
   const years = historicalSeasons.map(s => s.year);
 

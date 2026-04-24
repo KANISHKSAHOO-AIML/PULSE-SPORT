@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, Flame, Eye, Clock } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/utils/supabase/client";
 
 const TRENDING_ITEMS = [
   {
@@ -48,6 +50,38 @@ const TRENDING_ITEMS = [
 ];
 
 export default function TrendingWidget() {
+  const [items, setItems] = useState(TRENDING_ITEMS);
+  const [isRealData, setIsRealData] = useState(false);
+
+  useEffect(() => {
+    const fetchTrending = async () => {
+      try {
+        // Try to fetch the most recent/popular news from Supabase
+        const { data: newsData } = await supabase
+          .from("news")
+          .select("id, title, sport, views")
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (newsData && newsData.length > 0) {
+          const mapped = newsData.map((n: any, i: number) => ({
+            id: n.id,
+            type: "news" as const,
+            sport: n.sport || "cricket",
+            title: n.title,
+            engagement: n.views ? `${(n.views / 1000).toFixed(1)}K` : `${(Math.random() * 5 + 1).toFixed(1)}K`,
+            hot: i < 2,
+          }));
+          setItems(mapped);
+          setIsRealData(true);
+        }
+      } catch {
+        // Keep mock data on error
+      }
+    };
+    fetchTrending();
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -64,12 +98,19 @@ export default function TrendingWidget() {
       <div className="p-4 border-b border-zinc-800 flex items-center gap-2">
         <TrendingUp className="w-4 h-4 text-orange-500" />
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">Trending Now</h3>
-        <Flame className="w-3.5 h-3.5 text-orange-500 ml-auto animate-pulse" />
+        {!isRealData && (
+          <span className="ml-auto text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-bold border border-amber-500/20">
+            Sample
+          </span>
+        )}
+        {isRealData && (
+          <Flame className="w-3.5 h-3.5 text-orange-500 ml-auto animate-pulse" />
+        )}
       </div>
 
       {/* Items */}
       <div className="divide-y divide-zinc-800/50">
-        {TRENDING_ITEMS.map((item, i) => {
+        {items.map((item, i) => {
           const href = item.type === "news" ? `/news/${item.id}` : `/highlights/${item.id}`;
           const sportIcon = item.sport === "cricket" ? "🏏" : "⚽";
           const typeColor = item.type === "news" ? "text-cricket" : "text-football";

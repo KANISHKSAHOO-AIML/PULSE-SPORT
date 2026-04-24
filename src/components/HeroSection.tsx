@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, Zap, Users, Trophy, Radio } from "lucide-react";
+import { supabase } from "@/utils/supabase/client";
 
 const HERO_WORDS = ["THE PULSE", "OF SPORTS"];
 const FLOATING_EMOJIS = [
@@ -14,13 +15,6 @@ const FLOATING_EMOJIS = [
   { emoji: "🥇", x: "45%", y: "15%", delay: 3, duration: 8.5 },
   { emoji: "💪", x: "8%", y: "50%", delay: 2, duration: 6.5 },
   { emoji: "🎯", x: "75%", y: "80%", delay: 0.5, duration: 7.8 },
-];
-
-const STATS = [
-  { icon: Radio, label: "Live Sports", value: "2", suffix: "" },
-  { icon: Users, label: "Active Fans", value: "12K", suffix: "+" },
-  { icon: Zap, label: "Real-time", value: "24/7", suffix: "" },
-  { icon: Trophy, label: "Matches Tracked", value: "500", suffix: "+" },
 ];
 
 function useTypewriter(words: string[], speed = 80, pauseMs = 1200) {
@@ -49,12 +43,60 @@ export default function HeroSection() {
   const [showSubtitle, setShowSubtitle] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
+  // Dynamic stats from database
+  const [liveCount, setLiveCount] = useState(0);
+  const [totalMatches, setTotalMatches] = useState(0);
+  const [userCount, setUserCount] = useState(0);
+  const [predictionCount, setPredictionCount] = useState(0);
+
   useEffect(() => {
     if (done) {
       setShowSubtitle(true);
       setTimeout(() => setShowStats(true), 400);
     }
   }, [done]);
+
+  // Fetch real stats from Supabase
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Count total matches
+        const { count: matchCount } = await supabase
+          .from("matches")
+          .select("*", { count: "exact", head: true });
+        if (matchCount !== null) setTotalMatches(matchCount);
+
+        // Count live matches
+        const { count: live } = await supabase
+          .from("matches")
+          .select("*", { count: "exact", head: true })
+          .eq("live", true);
+        if (live !== null) setLiveCount(live);
+
+        // Count registered users
+        const { count: users } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true });
+        if (users !== null) setUserCount(users);
+
+        // Count predictions made
+        const { count: preds } = await supabase
+          .from("predictions")
+          .select("*", { count: "exact", head: true });
+        if (preds !== null) setPredictionCount(preds);
+      } catch {
+        // Silently fail — stats will show 0 which is honest
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const STATS = [
+    { icon: Radio, label: "Live Now", value: String(liveCount), suffix: "" },
+    { icon: Users, label: "Fans Joined", value: String(userCount), suffix: "" },
+    { icon: Zap, label: "Predictions", value: String(predictionCount), suffix: "" },
+    { icon: Trophy, label: "Matches", value: String(totalMatches), suffix: "" },
+  ];
 
   const scrollToContent = () => {
     const el = document.getElementById("section-cricket");

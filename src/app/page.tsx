@@ -44,22 +44,75 @@ export default function Home() {
   const cricketRef = useRef<HTMLDivElement>(null);
   const footballRef = useRef<HTMLDivElement>(null);
 
-  // Fetch matches
+  // Fetch matches from unified API (CricAPI + Football-Data.org + Supabase)
   useEffect(() => {
     const fetchMatches = async () => {
+      try {
+        // Primary: Use the unified API route that merges real APIs + Supabase
+        const res = await fetch("/api/live-matches");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.matches && json.matches.length > 0) {
+            // Normalize API matches to match Supabase format for MatchCard
+            const normalized = json.matches.map((m: any) => ({
+              id: m.id,
+              sport: m.sport,
+              title: m.title,
+              team_a: m.teamA,
+              team_b: m.teamB,
+              score_a: m.scoreA,
+              score_b: m.scoreB,
+              status: m.status,
+              live: m.live,
+              source: m.source,
+            }));
+            setMatches(normalized);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // Fall through to Supabase
+      }
+      
+      // Fallback: Direct Supabase query
       const { data, error } = await supabase
         .from("matches")
         .select("*")
         .order("live", { ascending: false });
-      if (error) {
-        console.error("Error fetching matches:", error);
-      } else {
-        setMatches(data || []);
+      if (!error && data) {
+        setMatches(data);
       }
       setLoading(false);
     };
     fetchMatches();
 
+    // Poll for live score updates every 60s (Supabase real-time handles instant updates)
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/live-matches");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.matches && json.matches.length > 0) {
+            const normalized = json.matches.map((m: any) => ({
+              id: m.id,
+              sport: m.sport,
+              title: m.title,
+              team_a: m.teamA,
+              team_b: m.teamB,
+              score_a: m.scoreA,
+              score_b: m.scoreB,
+              status: m.status,
+              live: m.live,
+              source: m.source,
+            }));
+            setMatches(normalized);
+          }
+        }
+      } catch {}
+    }, 60000);
+
+    // Also listen for Supabase real-time updates
     const channel = supabase
       .channel("schema-db-changes")
       .on(
@@ -76,6 +129,7 @@ export default function Home() {
       .subscribe();
 
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -210,8 +264,13 @@ export default function Home() {
                       </motion.div>
                     ))
                   ) : (
-                    <div className="text-zinc-500 col-span-2 text-center py-8 glass-card rounded-2xl p-6">
-                      No cricket matches right now.
+                    <div className="text-zinc-500 col-span-2 text-center py-12 glass-card rounded-2xl p-8">
+                      <span className="text-4xl mb-3 block">🏏</span>
+                      <p className="text-lg font-bold text-zinc-300 mb-2">No cricket matches right now</p>
+                      <p className="text-sm text-zinc-500 mb-4">Check back during match hours or explore highlights</p>
+                      <a href="/highlights" className="inline-flex items-center gap-2 text-cricket text-xs font-bold hover:underline">
+                        Browse Highlights →
+                      </a>
                     </div>
                   )}
                 </AnimatePresence>
@@ -302,8 +361,13 @@ export default function Home() {
                       </motion.div>
                     ))
                   ) : (
-                    <div className="text-zinc-500 col-span-2 text-center py-8 glass-card rounded-2xl p-6">
-                      No football matches right now.
+                    <div className="text-zinc-500 col-span-2 text-center py-12 glass-card rounded-2xl p-8">
+                      <span className="text-4xl mb-3 block">⚽</span>
+                      <p className="text-lg font-bold text-zinc-300 mb-2">No football matches right now</p>
+                      <p className="text-sm text-zinc-500 mb-4">Check back during match hours or read the latest news</p>
+                      <a href="/news" className="inline-flex items-center gap-2 text-football text-xs font-bold hover:underline">
+                        Read Sports News →
+                      </a>
                     </div>
                   )}
                 </AnimatePresence>
@@ -334,6 +398,51 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <TrendingWidget />
               <Leaderboard />
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════
+          COMING SOON — More Sports
+          ══════════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 py-10 md:py-16">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center gap-3 mb-8">
+              <span className="text-3xl">🚀</span>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight">
+                Coming{" "}
+                <span className="animated-gradient-text">Soon</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { sport: "Basketball", emoji: "🏀", color: "from-orange-500/10 to-orange-500/5", border: "border-orange-500/15", text: "text-orange-400", desc: "NBA, EuroLeague & more" },
+                { sport: "Tennis", emoji: "🎾", color: "from-lime-500/10 to-lime-500/5", border: "border-lime-500/15", text: "text-lime-400", desc: "Grand Slams & ATP/WTA" },
+                { sport: "Formula 1", emoji: "🏎️", color: "from-red-500/10 to-red-500/5", border: "border-red-500/15", text: "text-red-400", desc: "Race results & standings" },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.sport}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className={`rounded-2xl border ${item.border} bg-gradient-to-br ${item.color} p-6 text-center relative overflow-hidden group hover:scale-[1.02] transition-transform`}
+                >
+                  <div className="absolute top-2 right-3 text-[9px] bg-white/5 text-zinc-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-white/5">
+                    Coming Soon
+                  </div>
+                  <span className="text-5xl block mb-3 group-hover:scale-110 transition-transform">{item.emoji}</span>
+                  <h3 className={`text-lg font-black ${item.text} mb-1`}>{item.sport}</h3>
+                  <p className="text-xs text-zinc-500">{item.desc}</p>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         </div>

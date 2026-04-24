@@ -12,6 +12,23 @@ import {
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════
+   FAN LEVEL DEFINITIONS
+   ═══════════════════════════════════════════════════════════════ */
+const FAN_LEVELS: Record<number, { name: string; icon: string; color: string; gradient: string; minXP: number }> = {
+  1: { name: "Rookie", icon: "🌱", color: "text-zinc-400", gradient: "from-zinc-600 to-zinc-400", minXP: 0 },
+  2: { name: "Rising Star", icon: "⭐", color: "text-blue-400", gradient: "from-blue-600 to-blue-400", minXP: 100 },
+  3: { name: "Match Regular", icon: "🏟️", color: "text-green-400", gradient: "from-green-600 to-green-400", minXP: 300 },
+  4: { name: "Super Fan", icon: "🔥", color: "text-orange-400", gradient: "from-orange-600 to-orange-400", minXP: 700 },
+  5: { name: "Legend", icon: "👑", color: "text-purple-400", gradient: "from-purple-600 to-purple-400", minXP: 1500 },
+  6: { name: "Hall of Famer", icon: "🏆", color: "text-yellow-400", gradient: "from-yellow-500 to-amber-400", minXP: 3000 },
+};
+
+function getNextLevelXP(level: number): number {
+  const next = FAN_LEVELS[level + 1];
+  return next ? next.minXP : FAN_LEVELS[6].minXP;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    BADGE DEFINITIONS
    ═══════════════════════════════════════════════════════════════ */
 const BADGE_DEFS: Record<string, { name: string; icon: string; desc: string; color: string }> = {
@@ -48,6 +65,7 @@ export default function ProfilePage() {
   const [predictions, setPredictions] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
   const [recentComments, setRecentComments] = useState<any[]>([]);
+  const [xpLog, setXpLog] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -102,6 +120,19 @@ export default function ProfilePage() {
         .order("created_at", { ascending: false })
         .limit(10);
       if (cmts) setRecentComments(cmts);
+
+      // Fetch XP log
+      try {
+        const { data: xpData } = await supabase
+          .from("xp_log")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(15);
+        if (xpData) setXpLog(xpData);
+      } catch {
+        // xp_log table may not exist yet
+      }
 
       setLoading(false);
     };
@@ -216,8 +247,94 @@ export default function ProfilePage() {
         <div className="absolute bottom-0 left-0 right-0 h-16 z-[5]" style={{ background: "linear-gradient(to top, #0a0a0a, transparent)" }} />
       </section>
 
+      {/* ═══ FAN LEVEL XP CARD ═══ */}
+      {(() => {
+        const currentXP = profile?.xp || 0;
+        const currentLevel = profile?.fan_level || 1;
+        const levelInfo = FAN_LEVELS[currentLevel] || FAN_LEVELS[1];
+        const nextLevelXP = getNextLevelXP(currentLevel);
+        const currentLevelXP = levelInfo.minXP;
+        const progressInLevel = nextLevelXP > currentLevelXP ? ((currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100 : 100;
+        const isMaxLevel = currentLevel >= 6;
+
+        return (
+          <section className="container mx-auto px-4 max-w-4xl -mt-2 relative z-10 mb-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card rounded-2xl border border-dark-border p-5 relative overflow-hidden"
+            >
+              {/* Level glow background */}
+              <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[80px] opacity-20 bg-gradient-to-br ${levelInfo.gradient}`} />
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${levelInfo.gradient} flex items-center justify-center text-2xl shadow-lg`}>
+                      {levelInfo.icon}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className={`text-lg font-black ${levelInfo.color}`}>{levelInfo.name}</h3>
+                        <span className="text-[10px] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-zinc-400 font-bold">Lvl {currentLevel}</span>
+                      </div>
+                      <p className="text-xs text-zinc-500 font-medium">{currentXP} XP earned total</p>
+                    </div>
+                  </div>
+                  {!isMaxLevel && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Next Level</p>
+                      <p className="text-sm font-bold text-white">{FAN_LEVELS[currentLevel + 1]?.name}</p>
+                      <p className="text-[10px] text-zinc-600">{nextLevelXP - currentXP} XP to go</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* XP Progress Bar */}
+                <div className="mt-2">
+                  <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1">
+                    <span>{currentLevelXP} XP</span>
+                    <span>{isMaxLevel ? "MAX LEVEL" : `${nextLevelXP} XP`}</span>
+                  </div>
+                  <div className="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <motion.div
+                      className={`h-full rounded-full bg-gradient-to-r ${levelInfo.gradient}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(100, progressInLevel)}%` }}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                    />
+                  </div>
+                </div>
+
+                {/* Level progression preview */}
+                <div className="flex items-center justify-between mt-4 gap-1">
+                  {Object.entries(FAN_LEVELS).map(([lvl, info]) => {
+                    const level = parseInt(lvl);
+                    const isActive = level === currentLevel;
+                    const isCompleted = level < currentLevel;
+                    return (
+                      <div key={lvl} className="flex flex-col items-center flex-1">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm border transition-all ${
+                          isActive ? `bg-gradient-to-br ${info.gradient} border-transparent shadow-lg` :
+                          isCompleted ? `bg-white/5 border-white/10` : `bg-zinc-900 border-zinc-800 opacity-40`
+                        }`}>
+                          {isCompleted ? "✓" : info.icon}
+                        </div>
+                        <span className={`text-[8px] mt-1 font-bold tracking-wider ${
+                          isActive ? info.color : isCompleted ? "text-zinc-500" : "text-zinc-700"
+                        }`}>{info.name.split(" ")[0]}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          </section>
+        );
+      })()}
+
       {/* Stats Cards */}
-      <section className="container mx-auto px-4 max-w-4xl -mt-2 relative z-10">
+      <section className="container mx-auto px-4 max-w-4xl relative z-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: "Predictions", value: stats?.total_predictions || 0, icon: Target, color: "text-blue-400", bg: "bg-blue-500/10" },
@@ -312,6 +429,45 @@ export default function ProfilePage() {
                   <div className="text-center py-6 text-zinc-600 text-sm">
                     <Trophy className="w-8 h-8 mx-auto mb-2 text-zinc-700" />
                     No badges yet. Start predicting to earn your first!
+                  </div>
+                )}
+              </div>
+
+              {/* XP Activity Log */}
+              <div className="glass-card rounded-2xl border border-dark-border p-6">
+                <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Star className="w-4 h-4 text-yellow-500" /> XP History
+                </h3>
+                {xpLog.length > 0 ? (
+                  <div className="space-y-2">
+                    {xpLog.slice(0, 8).map((entry: any) => {
+                      const actionLabels: Record<string, string> = {
+                        prediction: "Made a prediction",
+                        correct_prediction: "Correct prediction!",
+                        comment: "Posted a comment",
+                        debate: "Started a debate",
+                        debate_reply: "Got a reply",
+                        cheer: "Cheered for a team",
+                        login_streak_7: "7-day login streak",
+                      };
+                      return (
+                        <div key={entry.id} className="flex items-center gap-3 p-2 rounded-lg bg-zinc-800/30">
+                          <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center text-sm">
+                            {entry.action === "correct_prediction" ? "🎯" : entry.action === "cheer" ? "📣" : entry.action === "comment" ? "💬" : "⚡"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-zinc-300 truncate">{actionLabels[entry.action] || entry.action}</p>
+                            <p className="text-[9px] text-zinc-600">{new Date(entry.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
+                          </div>
+                          <span className="text-xs font-bold text-green-400">+{entry.xp_earned} XP</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-zinc-600 text-sm">
+                    <Zap className="w-8 h-8 mx-auto mb-2 text-zinc-700" />
+                    No XP earned yet. Predict, comment, and cheer to earn XP!
                   </div>
                 )}
               </div>
