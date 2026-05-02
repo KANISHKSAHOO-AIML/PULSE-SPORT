@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import { ArrowRight, Clock, TrendingUp } from "lucide-react";
-import { supabase } from "@/utils/supabase/client";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { HeroSkeleton, NewsCardSkeleton } from "@/components/Skeletons";
@@ -14,70 +13,64 @@ const ParallaxSportScene = dynamic(
   { ssr: false }
 );
 
-const MOCK_NEWS = [
-  {
-    id: "mock-news-1", sport: "football",
-    title: "Champions League Semi-Final: Real Madrid's Dramatic Comeback Stuns the World",
-    summary: "In one of the greatest Champions League nights in history, Real Madrid came back from 3-0 down to beat Manchester City 4-3 on aggregate with a stoppage-time winner.",
-    image_url: "https://images.unsplash.com/photo-1518605368461-1ee7c588b4db?q=80&w=2938&auto=format&fit=crop",
-    time_ago: "2 hours ago", featured: true, created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-news-2", sport: "cricket",
-    title: "India's Captain Smashes Unbeaten Century to Chase Down 380-Run Target",
-    summary: "In a stunning display of skill and composure, the captain hit an unbeaten 175 off 138 balls to lead India to victory in the World Cup semi-final against Australia.",
-    image_url: "https://images.unsplash.com/photo-1531415074968-036ba1b575da?q=80&w=2938&auto=format&fit=crop",
-    time_ago: "5 hours ago", featured: true, created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-news-3", sport: "football",
-    title: "Premier League Title Race: Arsenal and Liverpool Locked in a Thrilling Battle",
-    summary: "With just 5 matches remaining, Arsenal lead Liverpool by a single point in what has been the most competitive Premier League season in decades.",
-    image_url: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=2893&auto=format&fit=crop",
-    time_ago: "8 hours ago", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-news-4", sport: "cricket",
-    title: "T20 Revolution: Rising Star Takes 5 Wickets in 4 Overs to Win Tournament",
-    summary: "The 19-year-old fast bowler delivered a match-winning spell of 5/12 in the IPL final, announcing his arrival on the world stage with devastating pace and swing.",
-    image_url: "https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=2940&auto=format&fit=crop",
-    time_ago: "12 hours ago", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-news-5", sport: "football",
-    title: "Transfer Bombshell: Star Striker Completes Record-Breaking €220M Move",
-    summary: "The 24-year-old Brazilian forward has completed his transfer from Paris to Madrid in the most expensive deal in football history, signing a 6-year contract.",
-    image_url: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2938&auto=format&fit=crop",
-    time_ago: "1 day ago", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-news-6", sport: "cricket",
-    title: "England Announces Bold Squad for Ashes Series with Three Uncapped Players",
-    summary: "The ECB has taken a gamble by selecting three uncapped players for the upcoming Ashes tour, backing youth and aggression over experience.",
-    image_url: "https://images.unsplash.com/photo-1624526267942-ab0ff8a3e972?q=80&w=2940&auto=format&fit=crop",
-    time_ago: "1 day ago", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-news-7", sport: "football",
-    title: "World Cup 2026 Venues Revealed: 16 Stadiums Across Three Countries",
-    summary: "FIFA has officially confirmed the 16 stadiums that will host the 2026 World Cup matches across the United States, Mexico, and Canada.",
-    image_url: "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?q=80&w=2942&auto=format&fit=crop",
-    time_ago: "2 days ago", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-news-8", sport: "cricket",
-    title: "Women's Cricket Breaks Viewership Records with Thrilling World Cup Final",
-    summary: "The Women's Cricket World Cup final between India and Australia attracted over 90 million viewers globally, setting a new record for women's cricket.",
-    image_url: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=2905&auto=format&fit=crop",
-    time_ago: "3 days ago", created_at: new Date().toISOString(),
-  },
-];
+// Fallback image component with graceful error handling
+function NewsImage({ src, alt, className, sport }: { src?: string; alt: string; className?: string; sport?: string }) {
+  const [imgError, setImgError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const isCricket = sport === "cricket";
+  const gradientBg = isCricket
+    ? "bg-gradient-to-br from-cyan-950 via-cyan-900/60 to-zinc-900"
+    : "bg-gradient-to-br from-green-950 via-green-900/60 to-zinc-900";
+  const emoji = isCricket ? "🏏" : "⚽";
+  const accentLine = isCricket ? "bg-cyan-500/30" : "bg-green-500/30";
+
+  if (!src || imgError) {
+    return (
+      <div className={`${className} ${gradientBg} flex items-center justify-center relative overflow-hidden`}>
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: "40px 40px",
+        }} />
+        {/* Accent glow */}
+        <div className={`absolute bottom-0 left-0 right-0 h-1 ${accentLine}`} />
+        <div className="text-center relative z-10">
+          <span className="text-5xl block mb-1 drop-shadow-lg" style={{ filter: "saturate(1.3)" }}>{emoji}</span>
+          <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">{isCricket ? "Cricket" : "Football"}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {!loaded && (
+        <div className={`${className} ${gradientBg} animate-pulse flex items-center justify-center absolute inset-0`}>
+          <span className="text-3xl">{emoji}</span>
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`${className} ${loaded ? "opacity-100" : "opacity-0"} transition-opacity duration-500`}
+        onError={() => setImgError(true)}
+        onLoad={() => setLoaded(true)}
+        referrerPolicy="no-referrer"
+      />
+    </>
+  );
+}
+
 
 // Reusable article card
 function ArticleCard({ article, index }: { article: any; index: number }) {
-  const accent = article.sport === "cricket" ? "text-cricket" : "text-football";
-  const badge = article.sport === "cricket" ? "bg-cricket/10 text-cricket border-cricket/30" : "bg-football/10 text-football border-football/30";
-  const glow = article.sport === "cricket" ? "card-glow-cricket" : "card-glow-football";
+  const isCricket = article.sport === "cricket";
+  const badge = isCricket
+    ? "bg-cricket/15 text-cricket border-cricket/30"
+    : "bg-football/15 text-football border-football/30";
+  const glow = isCricket ? "hover:shadow-[0_0_20px_rgba(0,255,255,0.15)]" : "hover:shadow-[0_0_20px_rgba(57,255,20,0.15)]";
+  const accent = isCricket ? "text-cricket" : "text-football";
   const readingTime = Math.max(1, Math.ceil((article.summary?.length || 100) / 200));
 
   return (
@@ -88,56 +81,72 @@ function ArticleCard({ article, index }: { article: any; index: number }) {
       transition={{ duration: 0.4, delay: index * 0.08 }}
       className={`group rounded-2xl overflow-hidden glass-card border border-dark-border hover:border-zinc-600 transition-all flex flex-col h-full ${glow}`}
     >
-      <div className="relative h-48 overflow-hidden">
-        <img src={article.image_url} alt={article.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute top-3 left-3 flex gap-2">
-          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border ${badge}`}>
-            {article.sport}
-          </span>
-          {article.featured && (
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md bg-red-500/20 text-red-400 border border-red-500/30">
-              Featured
+      <Link href={`/news/${article.id}`} className="flex flex-col h-full">
+        <div className="relative h-48 overflow-hidden">
+          <NewsImage
+            src={article.image_url}
+            alt={article.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            sport={article.sport}
+          />
+          <div className="absolute top-3 left-3 flex gap-2 z-10">
+            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border ${badge}`}>
+              {article.sport}
             </span>
-          )}
+            {article.featured && (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md bg-red-500/20 text-red-400 border border-red-500/30">
+                Featured
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="p-5 flex flex-col flex-grow">
-        <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2.5">
-          <Clock className="w-3.5 h-3.5" />
-          <span>{article.time_ago}</span>
-          <span className="text-zinc-700">•</span>
-          <span>{readingTime} min read</span>
+        <div className="p-5 flex flex-col flex-grow">
+          <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2.5">
+            <Clock className="w-3.5 h-3.5" />
+            <span>{article.time_ago}</span>
+            <span className="text-zinc-700">•</span>
+            <span>{readingTime} min read</span>
+          </div>
+          <h3 className="text-lg font-bold mb-2 line-clamp-2 leading-snug group-hover:text-white transition-colors">
+            {article.title}
+          </h3>
+          <p className="text-zinc-500 text-sm mb-4 line-clamp-2 flex-grow">{article.summary}</p>
+          <span className={`inline-flex items-center font-semibold text-xs ${accent} group-hover:underline mt-auto`}>
+            Read Full Story <ArrowRight className="w-3.5 h-3.5 ml-1" />
+          </span>
         </div>
-        <h3 className="text-lg font-bold mb-2 line-clamp-2 leading-snug group-hover:text-white transition-colors">
-          {article.title}
-        </h3>
-        <p className="text-zinc-500 text-sm mb-4 line-clamp-2 flex-grow">{article.summary}</p>
-        <Link href={`/news/${article.id}`} className={`inline-flex items-center font-semibold text-xs ${accent} hover:underline`}>
-          Read Full Story <ArrowRight className="w-3.5 h-3.5 ml-1" />
-        </Link>
-      </div>
+      </Link>
     </motion.article>
   );
 }
 
-// Hero featured card
 function HeroArticle({ article, sport }: { article: any; sport: string }) {
   const accent = sport === "cricket" ? "text-cricket" : "text-football";
+
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-6">
-      <Link href={`/news/${article.id}`} className="group block relative rounded-2xl overflow-hidden glass-card border border-dark-border hover:border-zinc-600 transition-all">
+      <Link href={`/news/${article.id}`} className="group block relative rounded-2xl overflow-hidden glass-card border border-dark-border hover:border-zinc-600 transition-all cursor-pointer">
         <div className="relative h-[280px] md:h-[380px] overflow-hidden">
-          <img src={article.image_url} alt={article.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          <NewsImage
+            src={article.image_url}
+            alt={article.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            sport={sport}
+          />
           <div className="hero-card-overlay absolute inset-0" />
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md mb-3 ${
-              sport === "cricket" ? "bg-cricket/15 text-cricket border border-cricket/30" : "bg-football/15 text-football border border-football/30"
-            }`}>{sport}</span>
+          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md ${
+                sport === "cricket" ? "bg-cricket/15 text-cricket border border-cricket/30" : "bg-football/15 text-football border border-football/30"
+              }`}>{sport}</span>
+            </div>
             <h2 className="text-xl md:text-3xl font-black text-white leading-tight mb-2 max-w-2xl">{article.title}</h2>
             <p className="text-zinc-400 text-sm max-w-xl line-clamp-2 mb-2">{article.summary}</p>
             <div className="flex items-center gap-3 text-zinc-500 text-sm">
               <Clock className="w-4 h-4" /><span>{article.time_ago}</span>
-              <span className={`${accent} font-semibold group-hover:underline ml-auto flex items-center gap-1`}>Read Story <ArrowRight className="w-4 h-4" /></span>
+              <span className={`${accent} font-semibold group-hover:underline ml-auto flex items-center gap-1`}>
+                Read Story <ArrowRight className="w-4 h-4" />
+              </span>
             </div>
           </div>
         </div>
@@ -226,13 +235,19 @@ export default function NewsPage() {
 
   useEffect(() => {
     const fetchNews = async () => {
-      // 1. Try Supabase admin-published articles first
-      const { data: supaData } = await supabase
-        .from("news")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // 1. Fetch AI-rewritten PulseSports articles from Supabase
+      let dbArticles: any[] = [];
+      try {
+        const { supabase } = await import("@/utils/supabase/client");
+        const { data } = await supabase
+          .from("news")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(20);
+        if (data) dbArticles = data;
+      } catch (_) {}
 
-      // 2. Try real ESPN news API
+      // 2. Fetch live ESPN articles
       let espnArticles: any[] = [];
       try {
         const res = await fetch("/api/sports-news");
@@ -242,15 +257,28 @@ export default function NewsPage() {
         }
       } catch (_) {}
 
-      // 3. Merge: Supabase first, then ESPN, then fallback to mock
-      const merged = [
-        ...(supaData || []),
-        ...espnArticles.filter(
-          (e) => !(supaData || []).some((s: any) => s.title === e.title)
-        ),
-      ];
+      // 3. Merge: AI-rewritten first (PulseSports originals), then ESPN live
+      //    Deduplicate by normalized title to prevent showing both versions
+      const seen = new Set<string>();
+      const merged: any[] = [];
 
-      setNewsArticles(merged.length > 0 ? merged : MOCK_NEWS);
+      for (const article of dbArticles) {
+        const key = article.title?.toLowerCase().trim();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          merged.push({ ...article, source: "pulsesports" });
+        }
+      }
+
+      for (const article of espnArticles) {
+        const key = article.title?.toLowerCase().trim();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          merged.push(article);
+        }
+      }
+
+      setNewsArticles(merged);
       setLoading(false);
     };
     fetchNews();
@@ -273,7 +301,7 @@ export default function NewsPage() {
   const footballNews = newsArticles.filter((a) => a.sport === "football");
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-foreground">
+    <div className="min-h-screen bg-[#0a0a0a] text-foreground pb-20 md:pb-0">
       <Header />
 
       {/* Quick Nav — same style as home */}
@@ -305,6 +333,7 @@ export default function NewsPage() {
               <span className="text-cricket text-xs font-bold uppercase tracking-widest">Breaking Stories</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight">Sports News</h1>
+            <p className="text-zinc-500 text-sm mt-2">Real-time coverage powered by ESPN</p>
           </motion.div>
         </div>
       </div>

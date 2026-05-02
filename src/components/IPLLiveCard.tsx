@@ -46,9 +46,9 @@ export default function IPLLiveCard({ matchData, fallback = true }: Props) {
   const [countdown, setCountdown] = useState("");
   const [liveData, setLiveData] = useState<any>(matchData || null);
   const [pulse, setPulse] = useState(false);
+  const [countdownDone, setCountdownDone] = useState(false);
 
   // If no match data is passed, we just don't render.
-  // The API already injects today's schedule, so we don't need a hardcoded fallback here.
   const match = liveData || matchData;
 
   const team1Name = match?.teams?.[0] || match?.team1 || "TBA";
@@ -57,17 +57,25 @@ export default function IPLLiveCard({ matchData, fallback = true }: Props) {
   const isCompleted = match?.matchEnded;
   const scores = match?.score || [];
 
-  // Countdown timer
+  // Countdown timer — when it hits 0, set countdownDone to trigger polling
   useEffect(() => {
     if (!match || isLive || isCompleted) return;
     const targetTime = new Date(match.date).getTime();
     if (isNaN(targetTime)) return;
+    
+    // If match time already passed, immediately mark countdown as done
+    if (Date.now() >= targetTime) {
+      setCountdown("Match Starting!");
+      setCountdownDone(true);
+      return;
+    }
     
     const interval = setInterval(() => {
       const now = Date.now();
       const diff = targetTime - now;
       if (diff <= 0) {
         setCountdown("Match Starting!");
+        setCountdownDone(true);
         clearInterval(interval);
         return;
       }
@@ -79,24 +87,33 @@ export default function IPLLiveCard({ matchData, fallback = true }: Props) {
     return () => clearInterval(interval);
   }, [isLive, isCompleted, match?.date]);
 
-  // Poll for live updates
+  // Poll for live updates — triggers when match is live OR countdown has finished
   useEffect(() => {
-    if (!isLive) return;
-    const interval = setInterval(async () => {
+    if (!isLive && !countdownDone) return;
+
+    const pollForScores = async () => {
       try {
         const res = await fetch("/api/ipl");
         const data = await res.json();
         if (data.matches?.length > 0) {
-          // If the match from API matches the current match, update it
-          const updatedMatch = data.matches.find((m: any) => m.id === match?.id) || data.matches[0];
+          // Try to find the exact match by ID or team names
+          const updatedMatch = data.matches.find((m: any) => 
+            m.id === match?.id || 
+            (m.teams && match?.teams && m.teams[0] === match.teams[0] && m.teams[1] === match.teams[1])
+          ) || data.matches[0];
+          
           setLiveData(updatedMatch);
           setPulse(true);
           setTimeout(() => setPulse(false), 500);
         }
       } catch {}
-    }, 30000);
+    };
+
+    // Poll immediately, then every 30s
+    pollForScores();
+    const interval = setInterval(pollForScores, 30000);
     return () => clearInterval(interval);
-  }, [isLive, match?.id]);
+  }, [isLive, countdownDone, match?.id]);
 
   if (!match) return null;
 
@@ -155,12 +172,14 @@ export default function IPLLiveCard({ matchData, fallback = true }: Props) {
             </div>
             <h3 className="font-black text-xl md:text-2xl" style={{ color: color1 }}>{short1}</h3>
             <p className="text-xs text-zinc-500 mt-1">{team1Name}</p>
-            {scores[0] && (
+            {scores[0] ? (
               <p className="mt-2 text-2xl md:text-3xl font-black text-white">
                 {scores[0].r}/{scores[0].w}
                 <span className="text-sm text-zinc-400 ml-1">({scores[0].o})</span>
               </p>
-            )}
+            ) : (isLive || countdownDone) ? (
+              <p className="mt-2 text-sm text-zinc-500 animate-pulse">Awaiting scores...</p>
+            ) : null}
           </div>
 
           {/* VS */}
@@ -181,12 +200,14 @@ export default function IPLLiveCard({ matchData, fallback = true }: Props) {
             </div>
             <h3 className="font-black text-xl md:text-2xl" style={{ color: color2 }}>{short2}</h3>
             <p className="text-xs text-zinc-500 mt-1">{team2Name}</p>
-            {scores[1] && (
+            {scores[1] ? (
               <p className="mt-2 text-2xl md:text-3xl font-black text-white">
                 {scores[1].r}/{scores[1].w}
                 <span className="text-sm text-zinc-400 ml-1">({scores[1].o})</span>
               </p>
-            )}
+            ) : (isLive || countdownDone) ? (
+              <p className="mt-2 text-sm text-zinc-500 animate-pulse">Awaiting scores...</p>
+            ) : null}
           </div>
         </div>
 

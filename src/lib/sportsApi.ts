@@ -23,6 +23,7 @@ const CRICKET_API_BASE = "https://api.cricapi.com/v1";
 export interface CricketMatch {
   id: string;
   name: string;
+  series?: string;
   status: string;
   venue: string;
   date: string;
@@ -32,20 +33,38 @@ export interface CricketMatch {
   matchEnded: boolean;
 }
 
+/** Keywords to exclude from cricket matches (PSL and related) */
+const EXCLUDED_CRICKET_SERIES = [
+  "pakistan super league",
+  "psl",
+  "islamabad united",
+  "lahore qalandars",
+  "karachi kings",
+  "peshawar zalmi",
+  "quetta gladiators",
+  "multan sultans",
+];
+
 export async function fetchLiveCricketMatches(): Promise<CricketMatch[]> {
   const key = process.env.CRICKET_API_KEY;
   if (!key) return [];
   
   try {
     const res = await fetch(`${CRICKET_API_BASE}/currentMatches?apikey=${key}&offset=0`, {
-      next: { revalidate: 120 }, // Cache for 2min to reduce API load
+      next: { revalidate: 90 }, // Cache for 1m30s
     });
     
     if (!res.ok) return [];
     const data = await res.json();
     
     if (data.status !== "success" || !data.data) return [];
-    return data.data;
+    
+    // Filter out PSL matches — keep IPL, internationals, and other T20 leagues
+    return (data.data as CricketMatch[]).filter((m) => {
+      const name = (m.name || "").toLowerCase();
+      const series = (m.series || "").toLowerCase();
+      return !EXCLUDED_CRICKET_SERIES.some(kw => name.includes(kw) || series.includes(kw));
+    });
   } catch {
     return [];
   }
@@ -57,7 +76,7 @@ export async function fetchCricketMatchInfo(matchId: string) {
   
   try {
     const res = await fetch(`${CRICKET_API_BASE}/match_info?apikey=${key}&id=${matchId}`, {
-      next: { revalidate: 30 },
+      next: { revalidate: 90 }, // Cache for 1m30s
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -94,7 +113,7 @@ export async function fetchLiveFootballMatches(): Promise<FootballMatch[]> {
   try {
     const res = await fetch(`${FOOTBALL_API_BASE}/matches?status=LIVE,IN_PLAY,PAUSED`, {
       headers: { "X-Auth-Token": key },
-      next: { revalidate: 120 }, // 2min cache
+      next: { revalidate: 90 }, // 1m30s cache
     });
     
     if (!res.ok) return [];
@@ -113,7 +132,7 @@ export async function fetchTodayFootballMatches(): Promise<FootballMatch[]> {
     const today = new Date().toISOString().split("T")[0];
     const res = await fetch(`${FOOTBALL_API_BASE}/matches?dateFrom=${today}&dateTo=${today}`, {
       headers: { "X-Auth-Token": key },
-      next: { revalidate: 600 }, // 10min cache for scheduled matches
+      next: { revalidate: 90 }, // 1m30s cache
     });
     
     if (!res.ok) return [];

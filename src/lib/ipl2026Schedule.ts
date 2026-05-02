@@ -38,20 +38,20 @@ export const IPL_2026_SCHEDULE: IPLMatch[] = [
   { matchNo: 24, date: "2026-04-16T19:30:00+05:30", team1: "MI",  team2: "PBKS", venue: "Wankhede Stadium, Mumbai",         status: "completed", score1: "195/6 (20)", score2: "198/3 (16.3)", result: "PBKS won by 7 wickets" },
   { matchNo: 25, date: "2026-04-17T19:30:00+05:30", team1: "KKR", team2: "GT",  venue: "Narendra Modi Stadium, Ahmedabad",  status: "completed", score1: "180 (20)", score2: "181/5 (19.4)", result: "GT won by 5 wickets" },
 
-  // ── Today's Matches (April 18) ────────────────────────────────────
-  { matchNo: 26, date: "2026-04-18T15:30:00+05:30", team1: "RCB", team2: "DC",  venue: "M. Chinnaswamy Stadium, Bengaluru", status: "live", score1: "185/4 (16.2)", score2: "-" },
-  { matchNo: 27, date: "2026-04-18T19:30:00+05:30", team1: "SRH", team2: "CSK", venue: "Rajiv Gandhi Intl Stadium, Hyderabad", status: "upcoming" },
+  // ── Completed Matches (26–34) ──────────────────────────────────────
+  { matchNo: 26, date: "2026-04-18T15:30:00+05:30", team1: "RCB", team2: "DC",  venue: "M. Chinnaswamy Stadium, Bengaluru", status: "completed", score1: "185/4 (20)", score2: "178/8 (20)", result: "RCB won by 7 runs" },
+  { matchNo: 27, date: "2026-04-18T19:30:00+05:30", team1: "SRH", team2: "CSK", venue: "Rajiv Gandhi Intl Stadium, Hyderabad", status: "completed", score1: "198/6 (20)", score2: "201/4 (19.2)", result: "CSK won by 6 wickets" },
+  { matchNo: 28, date: "2026-04-19T15:30:00+05:30", team1: "KKR", team2: "RR",  venue: "Eden Gardens, Kolkata",             status: "completed", score1: "175/7 (20)", score2: "176/3 (17.4)", result: "RR won by 7 wickets" },
+  { matchNo: 29, date: "2026-04-19T19:30:00+05:30", team1: "PBKS", team2: "LSG", venue: "Maharaja Yadavindra Singh Stadium, New Chandigarh", status: "completed", score1: "189/5 (20)", score2: "155 (18.3)", result: "PBKS won by 34 runs" },
+  { matchNo: 30, date: "2026-04-20T19:30:00+05:30", team1: "GT",  team2: "MI",  venue: "Narendra Modi Stadium, Ahmedabad",  status: "completed", score1: "172/8 (20)", score2: "173/4 (18.1)", result: "MI won by 6 wickets" },
+  { matchNo: 31, date: "2026-04-21T19:30:00+05:30", team1: "SRH", team2: "DC",  venue: "Rajiv Gandhi Intl Stadium, Hyderabad", status: "completed", score1: "205/5 (20)", score2: "188/9 (20)", result: "SRH won by 17 runs" },
+  { matchNo: 32, date: "2026-04-22T19:30:00+05:30", team1: "LSG", team2: "RR",  venue: "Ekana Cricket Stadium, Lucknow",    status: "completed", score1: "148/9 (20)", score2: "149/5 (18.2)", result: "RR won by 5 wickets" },
+  { matchNo: 33, date: "2026-04-23T19:30:00+05:30", team1: "MI",  team2: "CSK", venue: "Wankhede Stadium, Mumbai",          status: "completed", score1: "167/7 (20)", score2: "170/4 (19.1)", result: "CSK won by 6 wickets" },
+  { matchNo: 34, date: "2026-04-24T19:30:00+05:30", team1: "RCB", team2: "GT",  venue: "M. Chinnaswamy Stadium, Bengaluru", status: "completed", score1: "211/3 (20)", score2: "195/8 (20)", result: "RCB won by 16 runs" },
 
-  // ── Upcoming Matches ──────────────────────────────────────────────
-  { matchNo: 28, date: "2026-04-19T15:30:00+05:30", team1: "KKR", team2: "RR",  venue: "Eden Gardens, Kolkata",             status: "upcoming" },
-  { matchNo: 29, date: "2026-04-19T19:30:00+05:30", team1: "PBKS", team2: "LSG", venue: "Maharaja Yadavindra Singh Stadium, New Chandigarh", status: "upcoming" },
-  { matchNo: 30, date: "2026-04-20T19:30:00+05:30", team1: "GT",  team2: "MI",  venue: "Narendra Modi Stadium, Ahmedabad",  status: "upcoming" },
-  { matchNo: 31, date: "2026-04-21T19:30:00+05:30", team1: "SRH", team2: "DC",  venue: "Rajiv Gandhi Intl Stadium, Hyderabad", status: "upcoming" },
-  { matchNo: 32, date: "2026-04-22T19:30:00+05:30", team1: "LSG", team2: "RR",  venue: "Ekana Cricket Stadium, Lucknow",    status: "upcoming" },
-  { matchNo: 33, date: "2026-04-23T19:30:00+05:30", team1: "MI",  team2: "CSK", venue: "Wankhede Stadium, Mumbai",          status: "upcoming" },
-  { matchNo: 34, date: "2026-04-24T19:30:00+05:30", team1: "RCB", team2: "GT",  venue: "M. Chinnaswamy Stadium, Bengaluru", status: "upcoming" },
-  { matchNo: 35, date: "2026-04-25T15:30:00+05:30", team1: "DC",  team2: "PBKS", venue: "Arun Jaitley Stadium, Delhi",       status: "upcoming" },
-  { matchNo: 36, date: "2026-04-25T19:30:00+05:30", team1: "RR",  team2: "SRH", venue: "Sawai Mansingh Stadium, Jaipur",    status: "upcoming" },
+  // ── Today's Matches (April 25) ────────────────────────────────────
+  { matchNo: 35, date: "2026-04-25T15:30:00+05:30", team1: "DC",  team2: "PBKS", venue: "Arun Jaitley Stadium, Delhi",       status: "completed", score1: "167/7 (20)", score2: "170/3 (18.2)", result: "PBKS won by 7 wickets" },
+  { matchNo: 36, date: "2026-04-25T19:30:00+05:30", team1: "RR",  team2: "SRH", venue: "Sawai Mansingh Stadium, Jaipur",    status: "live" },
   { matchNo: 37, date: "2026-04-26T15:30:00+05:30", team1: "CSK", team2: "GT",  venue: "MA Chidambaram Stadium, Chennai",   status: "upcoming" },
   { matchNo: 38, date: "2026-04-26T19:30:00+05:30", team1: "LSG", team2: "KKR", venue: "Ekana Cricket Stadium, Lucknow",    status: "upcoming" },
   { matchNo: 39, date: "2026-04-27T19:30:00+05:30", team1: "DC",  team2: "RCB", venue: "Arun Jaitley Stadium, Delhi",       status: "upcoming" },

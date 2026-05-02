@@ -155,7 +155,7 @@ export default function ProfilePage() {
     : 0;
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0a0a0a] text-foreground">
+    <div className="min-h-screen bg-[#0a0a0a] text-foreground pb-20 md:pb-0">
       <Header />
       <div className="container mx-auto px-4 py-16 max-w-4xl">
         <div className="animate-pulse space-y-6">
@@ -175,7 +175,7 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-foreground">
+    <div className="min-h-screen bg-[#0a0a0a] text-foreground pb-20 md:pb-0">
       <Header />
 
       {/* Profile Header */}

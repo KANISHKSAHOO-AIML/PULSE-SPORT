@@ -2,82 +2,46 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Flame, Eye, Clock } from "lucide-react";
+import { TrendingUp, Flame, Eye, Inbox } from "lucide-react";
 import Link from "next/link";
-import { supabase } from "@/utils/supabase/client";
 
-const TRENDING_ITEMS = [
-  {
-    id: "mock-news-2",
-    type: "news" as const,
-    sport: "cricket",
-    title: "India's Captain Smashes Unbeaten Century",
-    engagement: "12.5K",
-    hot: true,
-  },
-  {
-    id: "mock-high-1",
-    type: "highlight" as const,
-    sport: "football",
-    title: "90th Minute Bicycle Kick — UCL Final",
-    engagement: "8.2K",
-    hot: true,
-  },
-  {
-    id: "mock-news-3",
-    type: "news" as const,
-    sport: "football",
-    title: "Arsenal vs Liverpool: Title Race Heats Up",
-    engagement: "6.1K",
-    hot: false,
-  },
-  {
-    id: "mock-high-6",
-    type: "highlight" as const,
-    sport: "cricket",
-    title: "Last Ball Six Wins the World Cup!",
-    engagement: "5.4K",
-    hot: true,
-  },
-  {
-    id: "mock-news-5",
-    type: "news" as const,
-    sport: "football",
-    title: "Record €220M Transfer Completed",
-    engagement: "4.9K",
-    hot: false,
-  },
-];
+interface TrendingItem {
+  id: string;
+  type: "news" | "highlight";
+  sport: string;
+  title: string;
+  engagement: string;
+  hot: boolean;
+}
 
 export default function TrendingWidget() {
-  const [items, setItems] = useState(TRENDING_ITEMS);
-  const [isRealData, setIsRealData] = useState(false);
+  const [items, setItems] = useState<TrendingItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchTrending = async () => {
       try {
-        // Try to fetch the most recent/popular news from Supabase
-        const { data: newsData } = await supabase
-          .from("news")
-          .select("id, title, sport, views")
-          .order("created_at", { ascending: false })
-          .limit(5);
-
-        if (newsData && newsData.length > 0) {
-          const mapped = newsData.map((n: any, i: number) => ({
-            id: n.id,
-            type: "news" as const,
-            sport: n.sport || "cricket",
-            title: n.title,
-            engagement: n.views ? `${(n.views / 1000).toFixed(1)}K` : `${(Math.random() * 5 + 1).toFixed(1)}K`,
-            hot: i < 2,
-          }));
-          setItems(mapped);
-          setIsRealData(true);
+        // Fetch real trending news from the ESPN-powered API
+        const res = await fetch("/api/sports-news");
+        if (res.ok) {
+          const json = await res.json();
+          const articles = json.articles || [];
+          if (articles.length > 0) {
+            const mapped: TrendingItem[] = articles.slice(0, 5).map((a: any, i: number) => ({
+              id: a.id || `trending-${i}`,
+              type: "news" as const,
+              sport: a.sport || "cricket",
+              title: a.title,
+              engagement: a.time_ago || "recent",
+              hot: i < 2,
+            }));
+            setItems(mapped);
+          }
         }
       } catch {
-        // Keep mock data on error
+        // No data available
       }
+      setLoading(false);
     };
     fetchTrending();
   }, []);
@@ -98,61 +62,74 @@ export default function TrendingWidget() {
       <div className="p-4 border-b border-zinc-800 flex items-center gap-2">
         <TrendingUp className="w-4 h-4 text-orange-500" />
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">Trending Now</h3>
-        {!isRealData && (
-          <span className="ml-auto text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-bold border border-amber-500/20">
-            Sample
-          </span>
-        )}
-        {isRealData && (
+        {items.length > 0 && (
           <Flame className="w-3.5 h-3.5 text-orange-500 ml-auto animate-pulse" />
         )}
       </div>
 
       {/* Items */}
       <div className="divide-y divide-zinc-800/50">
-        {items.map((item, i) => {
-          const href = item.type === "news" ? `/news/${item.id}` : `/highlights/${item.id}`;
-          const sportIcon = item.sport === "cricket" ? "🏏" : "⚽";
-          const typeColor = item.type === "news" ? "text-cricket" : "text-football";
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-start gap-3 px-4 py-3 animate-pulse">
+              <div className="w-4 h-4 bg-zinc-800 rounded" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 bg-zinc-800 rounded w-3/4" />
+                <div className="h-2 bg-zinc-800 rounded w-1/3" />
+              </div>
+            </div>
+          ))
+        ) : items.length === 0 ? (
+          <div className="py-8 text-center">
+            <Inbox className="w-6 h-6 text-zinc-700 mx-auto mb-2" />
+            <p className="text-xs text-zinc-600 font-medium">No trending stories right now</p>
+            <p className="text-[10px] text-zinc-700 mt-1">Check back soon for the latest buzz</p>
+          </div>
+        ) : (
+          items.map((item, i) => {
+            const href = `/news/${item.id}`;
+            const sportIcon = item.sport === "cricket" ? "🏏" : "⚽";
+            const typeColor = item.type === "news" ? "text-cricket" : "text-football";
 
-          return (
-            <Link key={item.id} href={href}>
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-                className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors group"
-              >
-                {/* Rank number */}
-                <span className={`text-sm font-black shrink-0 mt-0.5 ${i < 3 ? "text-orange-500" : "text-zinc-600"}`}>
-                  {i + 1}
-                </span>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-zinc-200 leading-snug line-clamp-2 group-hover:text-white transition-colors">
-                    {item.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1 text-[10px] text-zinc-500">
-                    <span>{sportIcon}</span>
-                    <span className={`uppercase font-bold tracking-wider ${typeColor}`}>
-                      {item.type}
-                    </span>
-                    <span className="flex items-center gap-0.5">
-                      <Eye className="w-3 h-3" /> {item.engagement}
-                    </span>
-                  </div>
-                </div>
-
-                {item.hot && (
-                  <span className="shrink-0 text-[9px] bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded-full font-bold mt-0.5">
-                    🔥 HOT
+            return (
+              <Link key={item.id} href={href}>
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.06 }}
+                  className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors group"
+                >
+                  {/* Rank number */}
+                  <span className={`text-sm font-black shrink-0 mt-0.5 ${i < 3 ? "text-orange-500" : "text-zinc-600"}`}>
+                    {i + 1}
                   </span>
-                )}
-              </motion.div>
-            </Link>
-          );
-        })}
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-zinc-200 leading-snug line-clamp-2 group-hover:text-white transition-colors">
+                      {item.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1 text-[10px] text-zinc-500">
+                      <span>{sportIcon}</span>
+                      <span className={`uppercase font-bold tracking-wider ${typeColor}`}>
+                        {item.type}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        <Eye className="w-3 h-3" /> {item.engagement}
+                      </span>
+                    </div>
+                  </div>
+
+                  {item.hot && (
+                    <span className="shrink-0 text-[9px] bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded-full font-bold mt-0.5">
+                      🔥 HOT
+                    </span>
+                  )}
+                </motion.div>
+              </Link>
+            );
+          })
+        )}
       </div>
     </motion.div>
   );

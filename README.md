@@ -92,6 +92,7 @@
 - Sport toggle with smooth `AnimatePresence` transitions between Cricket & Football
 
 ### 🎨 Premium UI/UX
+- **Full-Height Arc Menu**: A floating logo hub that expands into a 100vh glassmorphic navigation panel with dynamic neon edge glows and curved clipping.
 - Dark-mode-first design with glassmorphism cards
 - **Framer Motion** animations — page transitions, scroll reveals, micro-interactions
 - Custom loading skeletons, 3D sport-themed loaders

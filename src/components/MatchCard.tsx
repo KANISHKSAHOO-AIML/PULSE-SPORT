@@ -114,7 +114,7 @@ export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
     };
 
     fetchCheers();
-    const interval = setInterval(fetchCheers, 3000); // Poll every 3s
+    const interval = setInterval(fetchCheers, 10000); // Poll every 10s
     return () => clearInterval(interval);
   }, [match.id, match.live]);
 
@@ -125,7 +125,7 @@ export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
       setHypeWaveform(prev => 
         prev.map(() => Math.max(3, Math.random() * (hypeScore / 100) * 28 + 3))
       );
-    }, 200);
+    }, 500);
     return () => clearInterval(interval);
   }, [hypeScore, match.live]);
 
@@ -279,11 +279,10 @@ export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
           {/* Audio waveform bars */}
           <div className="flex items-end gap-[2px] h-7 rounded-lg overflow-hidden bg-zinc-900/50 px-1 py-1">
             {hypeWaveform.map((barH, i) => (
-              <motion.div
+              <div
                 key={i}
                 className={`flex-1 hype-bar ${hypeBarClass}`}
-                animate={{ height: barH }}
-                transition={{ duration: 0.12, ease: "easeOut" }}
+                style={{ height: barH, transition: "height 0.3s ease-out" }}
               />
             ))}
           </div>

@@ -19,53 +19,7 @@ const ReelsView = dynamic(
   { ssr: false }
 );
 
-const MOCK_HIGHLIGHTS = [
-  {
-    id: "mock-high-1", title: "90th Minute Bicycle Kick Goal — Champions League Final",
-    sport: "football", thumbnail: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2938&auto=format&fit=crop",
-    duration: "04:15", views: "12.4M", featured: true, created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-high-2", title: "Fastest T20 Century — 35 Balls — Six After Six After Six",
-    sport: "cricket", thumbnail: "https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=2940&auto=format&fit=crop",
-    duration: "06:30", views: "8.5M", featured: true, created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-high-3", title: "Hat-trick Hero: Three Goals in 7 Minutes to Win the Derby",
-    sport: "football", thumbnail: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=2893&auto=format&fit=crop",
-    duration: "05:42", views: "6.1M", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-high-4", title: "5 Wickets in 1 Over — The Most Devastating Bowling Spell Ever",
-    sport: "cricket", thumbnail: "https://images.unsplash.com/photo-1531415074968-036ba1b575da?q=80&w=2938&auto=format&fit=crop",
-    duration: "03:55", views: "5.2M", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-high-5", title: "40-Yard Free Kick Screamer — Top Corner, No Chance for the Keeper",
-    sport: "football", thumbnail: "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?q=80&w=2942&auto=format&fit=crop",
-    duration: "02:10", views: "4.8M", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-high-6", title: "Last Ball Six to Win the World Cup — Commentary Goes Wild",
-    sport: "cricket", thumbnail: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=2905&auto=format&fit=crop",
-    duration: "07:20", views: "15.3M", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-high-7", title: "Solo Run From Halfway — Dribbles Past 5 Defenders and Scores",
-    sport: "football", thumbnail: "https://images.unsplash.com/photo-1518605368461-1ee7c588b4db?q=80&w=2938&auto=format&fit=crop",
-    duration: "03:35", views: "9.7M", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-high-8", title: "Triple Century in Test Cricket — 300* in a Single Day",
-    sport: "cricket", thumbnail: "https://images.unsplash.com/photo-1624526267942-ab0ff8a3e972?q=80&w=2940&auto=format&fit=crop",
-    duration: "08:45", views: "3.1M", created_at: new Date().toISOString(),
-  },
-  {
-    id: "mock-high-9", title: "Penalty Shootout Drama — 22 Penalties Before a Winner",
-    sport: "football", thumbnail: "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=2940&auto=format&fit=crop",
-    duration: "10:15", views: "7.9M", created_at: new Date().toISOString(),
-  },
-];
+
 
 // Video card component
 function VideoCard({ video, index }: { video: any; index: number }) {
@@ -225,13 +179,11 @@ export default function HighlightsPage() {
       } catch {}
 
       // 2. Try Supabase admin-curated highlights
-      const { data, error } = await supabase.from("highlights").select("*").order("created_at", { ascending: false });
-      if (!error && data && data.length > 0) {
+      const { data } = await supabase.from("highlights").select("*").order("created_at", { ascending: false });
+      if (data && data.length > 0) {
         setHighlights(data);
-      } else {
-        // 3. Fallback to mock data
-        setHighlights(MOCK_HIGHLIGHTS);
       }
+      // No fake data fallback — show empty state instead
       setLoading(false);
     };
     fetchHighlights();
@@ -253,7 +205,7 @@ export default function HighlightsPage() {
   const footballHighlights = highlights.filter((h) => h.sport === "football");
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-foreground">
+    <div className="min-h-screen bg-[#0a0a0a] text-foreground pb-20 md:pb-0">
       <Header />
 
       {/* Quick Nav */}

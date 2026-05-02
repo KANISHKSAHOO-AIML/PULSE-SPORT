@@ -20,23 +20,59 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function getImageUrl(images: any[], sport: "cricket" | "football"): string {
+  if (!images || images.length === 0) return "";
+  
+  // Try to find the best image — prefer wider ones
+  const img = images.find((i: any) => i.width >= 600) || images[0];
+  let url = img?.url || "";
+  
+  if (!url) return "";
+  
+  // Replace common ESPN template placeholders
+  url = url
+    .replace(/\{width\}/gi, "800")
+    .replace(/\{height\}/gi, "450")
+    .replace(/&w=\d+/, "&w=800")
+    .replace(/&h=\d+/, "&h=450");
+  
+  // Ensure HTTPS
+  if (url.startsWith("http://")) {
+    url = url.replace("http://", "https://");
+  }
+
+  // Cricket images from cricinfo CDN are blocked by hotlink protection.
+  // For cricket: only proxy images from /photo/ path (which work), 
+  // skip cricinfo ones (use empty string so frontend shows graceful fallback).
+  // For football: all images load fine via proxy.
+  const isCricinfoBlocked = url.includes("/i/cricket/cricinfo/");
+  
+  if (isCricinfoBlocked) {
+    // Try to construct an alternative URL or skip
+    // ESPNCricinfo images are fully blocked, return empty so the frontend shows sport-themed gradient
+    return "";
+  }
+
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
 function parseESPNArticles(articles: any[], sport: "cricket" | "football") {
   return articles
-    .filter((a: any) => a.headline && a.images?.[0])
-    .map((a: any) => ({
-      id: `espn-${a.id || a.uid || Math.random()}`,
-      sport,
-      title: a.headline,
-      summary: a.description || a.story?.slice(0, 200) || a.headline,
-      image_url:
-        a.images?.[0]?.url?.replace("{width}", "800").replace("{height}", "450") ||
-        a.images?.[0]?.url ||
-        "https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800",
-      time_ago: timeAgo(a.published || new Date().toISOString()),
-      source_url: a.links?.web?.href || "#",
-      featured: false,
-      created_at: a.published || new Date().toISOString(),
-    }));
+    .filter((a: any) => a.headline)
+    .map((a: any) => {
+      const imageUrl = getImageUrl(a.images || [], sport);
+      return {
+        id: `espn-${a.id || a.uid || Math.random()}`,
+        sport,
+        title: a.headline,
+        summary: a.description || a.story?.slice(0, 200) || a.headline,
+        image_url: imageUrl,
+        time_ago: timeAgo(a.published || new Date().toISOString()),
+        source_url: a.links?.web?.href || "#",
+        featured: false,
+        created_at: a.published || new Date().toISOString(),
+      };
+    });
 }
 
 export async function GET() {

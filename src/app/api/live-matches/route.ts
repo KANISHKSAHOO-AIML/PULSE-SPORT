@@ -15,65 +15,41 @@ const supabase = createClient(
 );
 
 /* ═══════════════════════════════════════════════════════════════
-   CURATED DEMO MATCHES — shown alongside real data to fill the UI
-   4 demo matches: 2 cricket + 2 football
+   MAX LIMITS — keep the homepage snappy (4 per sport)
    ═══════════════════════════════════════════════════════════════ */
-const DEMO_MATCHES: UnifiedMatch[] = [
-  {
-    id: "demo-cric-1",
-    sport: "cricket",
-    title: "IPL 2026 — MI vs CSK",
-    teamA: "Mumbai Indians",
-    teamB: "Chennai Super Kings",
-    scoreA: "186/4 (20)",
-    scoreB: "172/8 (20)",
-    status: "MI won by 14 runs",
-    live: false,
-    source: "supabase",
-  },
-  {
-    id: "demo-cric-2",
-    sport: "cricket",
-    title: "IPL 2026 — RCB vs KKR",
-    teamA: "Royal Challengers Bengaluru",
-    teamB: "Kolkata Knight Riders",
-    scoreA: "205/3 (20)",
-    scoreB: "198/7 (20)",
-    status: "RCB won by 7 runs",
-    live: false,
-    source: "supabase",
-  },
-  {
-    id: "demo-foot-1",
-    sport: "football",
-    title: "Premier League — Arsenal vs Man City",
-    teamA: "Arsenal",
-    teamB: "Man City",
-    scoreA: "2",
-    scoreB: "1",
-    status: "Full Time",
-    live: false,
-    source: "supabase",
-  },
-  {
-    id: "demo-foot-2",
-    sport: "football",
-    title: "La Liga — Barcelona vs Real Madrid",
-    teamA: "Barcelona",
-    teamB: "Real Madrid",
-    scoreA: "3",
-    scoreB: "3",
-    status: "Full Time",
-    live: false,
-    source: "supabase",
-  },
-];
+const MAX_PER_SPORT = 4;     // Cap at 4 cricket + 4 football
+const MAX_DB_MATCHES = 4;    // Cap Supabase admin-managed data
 
-/* ═══════════════════════════════════════════════════════════════
-   MAX LIMITS — keep the homepage snappy
-   ═══════════════════════════════════════════════════════════════ */
-const MAX_API_MATCHES = 4;   // Cap real API data at 4
-const MAX_DEMO_MATCHES = 4;  // Fill remaining slots with demo data
+/**
+ * Validate that a Supabase match has realistic scores.
+ * Filters out corrupted data like "9120/8" or "201-197".
+ */
+function isValidMatch(m: any): boolean {
+  // Check football scores — no team scores 50+ in a match
+  if (m.sport === "football") {
+    const scoreA = parseInt(m.score_a);
+    const scoreB = parseInt(m.score_b);
+    if (!isNaN(scoreA) && scoreA > 50) return false;
+    if (!isNaN(scoreB) && scoreB > 50) return false;
+  }
+
+  // Check cricket scores — no team scores 1000+ runs
+  if (m.sport === "cricket") {
+    const runsA = parseInt(m.score_a);
+    const runsB = parseInt(m.score_b);
+    if (!isNaN(runsA) && runsA > 999) return false;
+    if (!isNaN(runsB) && runsB > 999) return false;
+    // Also check for slash format like "9120/8"
+    const extractRuns = (s: string) => {
+      const match = s?.match(/^(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    };
+    if (extractRuns(m.score_a || "") > 999) return false;
+    if (extractRuns(m.score_b || "") > 999) return false;
+  }
+
+  return true;
+}
 
 export async function GET() {
   let apiMatches: UnifiedMatch[] = [];
@@ -87,87 +63,89 @@ export async function GET() {
     ]);
 
     // Normalize cricket API data
-    cricketMatches.forEach((m) => apiMatches.push(normalizeCricketMatch(m)));
+    const cricketAll: UnifiedMatch[] = [];
+    cricketMatches.forEach((m) => cricketAll.push(normalizeCricketMatch(m)));
     
     // Normalize football — merge live + today, deduplicate
+    const footballAll: UnifiedMatch[] = [];
     const footballSeen = new Set<number>();
     footballLive.forEach((m) => {
       footballSeen.add(m.id);
-      apiMatches.push(normalizeFootballMatch(m));
+      footballAll.push(normalizeFootballMatch(m));
     });
     footballToday.forEach((m) => {
       if (!footballSeen.has(m.id)) {
-        apiMatches.push(normalizeFootballMatch(m));
+        footballAll.push(normalizeFootballMatch(m));
       }
     });
 
-    // Sort: live matches first
-    apiMatches.sort((a, b) => {
+    // Sort each sport: live matches first
+    const sortLiveFirst = (a: UnifiedMatch, b: UnifiedMatch) => {
       if (a.live && !b.live) return -1;
       if (!a.live && b.live) return 1;
       return 0;
-    });
+    };
+    cricketAll.sort(sortLiveFirst);
+    footballAll.sort(sortLiveFirst);
 
-    // ⚡ CAP at 4 real matches (prefer live ones since they're sorted first)
-    apiMatches = apiMatches.slice(0, MAX_API_MATCHES);
+    // ⚡ CAP at 4 per sport
+    apiMatches = [
+      ...cricketAll.slice(0, MAX_PER_SPORT),
+      ...footballAll.slice(0, MAX_PER_SPORT),
+    ];
   } catch {
-    // API failure — will use demo matches only
+    // API failure — will rely on Supabase data only
   }
 
-  // 2. Try Supabase admin-managed matches (cap at remaining slots)
+  // 2. Only pull from Supabase if API data is sparse (< 4 matches)
+  //    This prevents corrupted admin data from polluting the feed
   let dbMatches: UnifiedMatch[] = [];
-  try {
-    const slotsLeft = MAX_API_MATCHES - apiMatches.length;
-    if (slotsLeft > 0) {
+  if (apiMatches.length < 4) {
+    try {
       const { data } = await supabase
         .from("matches")
         .select("*")
+        .order("live", { ascending: false })
         .order("updated_at", { ascending: false })
-        .limit(slotsLeft);
+        .limit(MAX_DB_MATCHES);
 
       if (data) {
-        data.forEach((m: any) => {
-          const exists = apiMatches.some(
-            (am) => am.teamA === m.team_a && am.teamB === m.team_b
-          );
-          if (!exists) {
-            dbMatches.push({
-              id: m.id,
-              sport: m.sport,
-              title: m.title,
-              teamA: m.team_a,
-              teamB: m.team_b,
-              scoreA: m.score_a,
-              scoreB: m.score_b,
-              status: m.status,
-              live: m.live,
-              source: "supabase",
-            });
-          }
-        });
+        data
+          .filter(isValidMatch)  // Filter out corrupted data
+          .forEach((m: any) => {
+            // Deduplicate against API matches
+            const exists = apiMatches.some(
+              (am) => am.teamA === m.team_a && am.teamB === m.team_b
+            );
+            if (!exists) {
+              dbMatches.push({
+                id: m.id,
+                sport: m.sport,
+                title: m.title,
+                teamA: m.team_a,
+                teamB: m.team_b,
+                scoreA: m.score_a,
+                scoreB: m.score_b,
+                status: m.status,
+                live: m.live,
+                source: "supabase",
+              });
+            }
+          });
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
-  // 3. Fill remaining slots with demo matches
-  const realCount = apiMatches.length + dbMatches.length;
-  const demoSlots = Math.min(MAX_DEMO_MATCHES, 8 - realCount); // Total max = 8
-  const demoToAdd = DEMO_MATCHES.slice(0, demoSlots).filter(
-    (dm) => ![...apiMatches, ...dbMatches].some(
-      (m) => m.teamA === dm.teamA && m.teamB === dm.teamB
-    )
-  );
-
-  // 4. Combine: real API first → Supabase → demo
-  const allMatches = [...apiMatches, ...dbMatches, ...demoToAdd];
+  // 3. Combine: real API first → validated Supabase (NO fake data)
+  const allMatches = [...apiMatches, ...dbMatches];
 
   return NextResponse.json({
     matches: allMatches,
     meta: {
       apiMatches: apiMatches.length,
       dbMatches: dbMatches.length,
-      demoMatches: demoToAdd.length,
       total: allMatches.length,
     },
   });
 }
+

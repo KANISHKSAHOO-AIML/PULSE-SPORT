@@ -9,5 +9,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createBrowserClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder_anon_key'
+  supabaseAnonKey || 'placeholder_anon_key',
+  {
+    auth: {
+      flowType: 'pkce',
+      // Prevent "Lock was released because another request stole it" errors
+      // caused by multiple components calling auth simultaneously.
+      // Use a simple in-memory lock instead of navigator.locks.
+      lock: async (name: string, acquireTimeout: number, fn: () => Promise<any>) => {
+        return await fn();
+      },
+    },
+  }
 );

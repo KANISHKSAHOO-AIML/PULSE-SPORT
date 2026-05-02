@@ -6,17 +6,6 @@ import Link from "next/link";
 import { supabase } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 
-const MOCK_RESULTS = [
-  { id: "mock-news-1", type: "news", sport: "football", title: "Champions League Semi-Final: Real Madrid's Dramatic Comeback" },
-  { id: "mock-news-2", type: "news", sport: "cricket", title: "India's Captain Smashes Unbeaten Century" },
-  { id: "mock-high-1", type: "highlight", sport: "football", title: "90th Minute Bicycle Kick Goal" },
-  { id: "mock-high-2", type: "highlight", sport: "cricket", title: "Fastest T20 Century — 35 Balls" },
-  { id: "mock-news-3", type: "news", sport: "football", title: "Premier League Title Race: Arsenal vs Liverpool" },
-  { id: "mock-news-4", type: "news", sport: "cricket", title: "T20 Revolution: Rising Star Takes 5 Wickets" },
-  { id: "mock-high-3", type: "highlight", sport: "football", title: "Hat-trick Hero: Three Goals in 7 Minutes" },
-  { id: "mock-high-6", type: "highlight", sport: "cricket", title: "Last Ball Six to Win the World Cup" },
-];
-
 export default function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -54,8 +43,20 @@ export default function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; on
       if (dbResults.length > 0) {
         setResults(dbResults);
       } else {
-        // Fallback to mock data search
-        setResults(MOCK_RESULTS.filter((r) => r.title.toLowerCase().includes(q)));
+        // Try ESPN news API as fallback search
+        try {
+          const res = await fetch("/api/sports-news");
+          if (res.ok) {
+            const json = await res.json();
+            const matches = (json.articles || [])
+              .filter((a: any) => a.title?.toLowerCase().includes(q))
+              .slice(0, 5)
+              .map((a: any) => ({ id: a.id, title: a.title, sport: a.sport, type: "news" }));
+            setResults(matches);
+          }
+        } catch {
+          setResults([]);
+        }
       }
     };
 

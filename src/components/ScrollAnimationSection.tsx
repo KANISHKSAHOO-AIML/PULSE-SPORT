@@ -27,29 +27,44 @@ export default function ScrollAnimationSection({
   useEffect(() => {
     if (!enabled) return;
 
+    let ticking = false;
+    let rafId = 0;
+
     const handleScroll = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const containerHeight = containerRef.current.offsetHeight;
-      const viewportHeight = window.innerHeight;
+      if (ticking) return;
+      ticking = true;
+      rafId = requestAnimationFrame(() => {
+        if (!containerRef.current) {
+          ticking = false;
+          return;
+        }
+        const rect = containerRef.current.getBoundingClientRect();
+        const containerHeight = containerRef.current.offsetHeight;
+        const viewportHeight = window.innerHeight;
 
-      // Calculate how far through the scroll container we are
-      const scrollableDistance = containerHeight - viewportHeight;
-      if (scrollableDistance <= 0) {
-        setScrollProgress(0);
-        return;
-      }
+        // Calculate how far through the scroll container we are
+        const scrollableDistance = containerHeight - viewportHeight;
+        if (scrollableDistance <= 0) {
+          setScrollProgress(prev => prev !== 0 ? 0 : prev);
+          ticking = false;
+          return;
+        }
 
-      // rect.top goes from positive (below viewport) to negative (above viewport)
-      const rawProgress = -rect.top / scrollableDistance;
-      const clampedProgress = Math.max(0, Math.min(1, rawProgress));
-      setScrollProgress(clampedProgress);
+        // rect.top goes from positive (below viewport) to negative (above viewport)
+        const rawProgress = -rect.top / scrollableDistance;
+        const clampedProgress = Math.max(0, Math.min(1, rawProgress));
+        setScrollProgress(prev => Math.abs(prev - clampedProgress) > 0.005 ? clampedProgress : prev);
+        ticking = false;
+      });
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      cancelAnimationFrame(rafId);
+    };
   }, [enabled]);
 
   const accentColor = sport === "cricket" ? "#00FFFF" : "#39FF14";

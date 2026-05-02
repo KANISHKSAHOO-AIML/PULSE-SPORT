@@ -7,8 +7,11 @@ import MatchCard from "@/components/MatchCard";
 import WinProbability from "@/components/WinProbability";
 import PlayerComparison from "@/components/PlayerComparison";
 import PulsePredictor from "@/components/PulsePredictor";
+import PredictionsMarket from "@/components/PredictionsMarket";
 import LiveTimeline from "@/components/LiveTimeline";
-import { Send, Users, Lock, MessageCircle, X, BarChart3, Trophy, MessageSquare, Activity } from "lucide-react";
+import MatchReport from "@/components/MatchReport";
+import PulseCommentary from "@/components/PulseCommentary";
+import { Send, Users, Lock, MessageCircle, X, BarChart3, Trophy, MessageSquare, Activity, Brain, Target, Newspaper, ChevronLeft, Mic } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,7 +19,7 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"fanspace" | "timeline" | "analytics" | "predict">("fanspace");
+  const [activeTab, setActiveTab] = useState<"fanspace" | "timeline" | "analytics" | "predict" | "market" | "report" | "commentary">("analytics");
   
   // Auth state
   const [user, setUser] = useState<any>(null);
@@ -53,19 +56,76 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
   // Fetch match details
   useEffect(() => {
     const fetchMatch = async () => {
+      // 1. Try Supabase first (for admin-managed matches)
       const { data } = await supabase.from("matches").select("*").eq("id", id).single();
-      if (data) setMatch(data);
+      if (data) {
+        setMatch(data);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fallback: Fetch from the unified API (for external API matches like CricAPI/Football-Data)
+      try {
+        const res = await fetch("/api/live-matches");
+        if (res.ok) {
+          const json = await res.json();
+          const found = json.matches?.find((m: any) => String(m.id) === String(id));
+          if (found) {
+            // Normalize to Supabase-like format
+            setMatch({
+              id: found.id,
+              sport: found.sport,
+              title: found.title,
+              team_a: found.teamA,
+              team_b: found.teamB,
+              score_a: found.scoreA,
+              score_b: found.scoreB,
+              status: found.status,
+              live: found.live,
+              source: found.source || "api",
+            });
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {}
+
+      // 3. Neither source has the match
       setLoading(false);
     };
     fetchMatch();
 
+    // Real-time updates for Supabase-sourced matches
     const channel = supabase
       .channel(`match-${id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "matches", filter: `id=eq.${id}` }, (payload) => {
         setMatch((prev: any) => ({ ...prev, ...payload.new }));
       }).subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Also poll the API every 30s for external matches
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/live-matches");
+        if (res.ok) {
+          const json = await res.json();
+          const found = json.matches?.find((m: any) => String(m.id) === String(id));
+          if (found) {
+            setMatch((prev: any) => ({
+              ...prev,
+              score_a: found.scoreA,
+              score_b: found.scoreB,
+              status: found.status,
+              live: found.live,
+            }));
+          }
+        }
+      } catch {}
+    }, 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+    };
   }, [id]);
 
   // Handle Live Chat vs Post-Match Debates
@@ -205,7 +265,7 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
   if (loading) return (
     <div className="min-h-screen bg-dark-bg text-white">
       <Header />
-      <div className="container mx-auto px-4 py-16 max-w-4xl animate-pulse">
+      <div className="container mx-auto px-4 py-16 max-w-5xl animate-pulse">
         <div className="h-40 bg-zinc-800 rounded-2xl mb-6" />
         <div className="h-8 w-64 bg-zinc-800 rounded mb-4" />
         <div className="h-[400px] bg-zinc-800 rounded-2xl" />
@@ -218,16 +278,56 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
   const replies = comments.filter(c => c.parent_id);
 
   const TABS = [
-    { key: "fanspace" as const, label: match.live ? "Fan Space" : "Debate", icon: MessageSquare },
-    { key: "timeline" as const, label: match.sport === "cricket" ? "Ball-by-Ball" : "Timeline", icon: Activity },
     { key: "analytics" as const, label: "Analytics", icon: BarChart3 },
+    { key: "commentary" as const, label: "Commentary", icon: Mic },
+    { key: "timeline" as const, label: match.sport === "cricket" ? "Ball-by-Ball" : "Timeline", icon: Activity },
+    { key: "report" as const, label: "AI Report", icon: Brain },
     { key: "predict" as const, label: "Predict", icon: Trophy },
+    { key: "market" as const, label: "Market", icon: Target },
+    { key: "fanspace" as const, label: match.live ? "Fan Space" : "Debate", icon: MessageSquare },
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg text-foreground">
+    <div className="min-h-screen bg-dark-bg text-foreground pb-20 md:pb-0">
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-4xl flex flex-col gap-6">
+
+      {/* ═══ STICKY SCOREBAR ═══ */}
+      <div className="sticky top-14 z-30 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-zinc-800">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="flex items-center justify-between py-3">
+            <Link href="/" className="flex items-center gap-1 text-zinc-500 hover:text-white transition-colors shrink-0">
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-xs font-bold hidden sm:inline">Back</span>
+            </Link>
+            
+            <div className="flex items-center gap-4 flex-1 justify-center">
+              {/* Team A */}
+              <div className="text-right flex-1 max-w-[140px]">
+                <p className="text-sm font-bold text-white truncate">{match.team_a}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xl font-black text-white tabular-nums">{match.score_a}</span>
+                <div className="flex flex-col items-center">
+                  {match.live && (
+                    <span className="text-[8px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider mb-1 animate-pulse">LIVE</span>
+                  )}
+                  <span className="text-[10px] text-zinc-600 font-bold">vs</span>
+                </div>
+                <span className="text-xl font-black text-white tabular-nums">{match.score_b}</span>
+              </div>
+              {/* Team B */}
+              <div className="text-left flex-1 max-w-[140px]">
+                <p className="text-sm font-bold text-white truncate">{match.team_b}</p>
+              </div>
+            </div>
+
+            <div className="shrink-0 w-10" /> {/* Spacer for alignment */}
+          </div>
+          <p className="text-[10px] text-zinc-500 text-center pb-2 -mt-1">{match.status}</p>
+        </div>
+      </div>
+
+      <main className="container mx-auto px-4 py-6 max-w-5xl flex flex-col gap-6">
         
         {/* Match Header Context */}
         <section>
@@ -237,26 +337,114 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
             }} />
         </section>
 
-        {/* Tab Navigation */}
-        <div className="flex gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                activeTab === tab.key
-                  ? "bg-white/10 text-white border border-white/10"
-                  : "text-zinc-500 hover:text-zinc-300 border border-transparent"
-              }`}
-            >
-              <tab.icon className="w-3.5 h-3.5" />
-              {tab.label}
-            </button>
-          ))}
+        {/* Tab Navigation — Scrollable on mobile */}
+        <div className="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+          <div className="flex gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-max">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? "bg-white/10 text-white border border-white/10"
+                    : "text-zinc-500 hover:text-zinc-300 border border-transparent"
+                }`}
+              >
+                <tab.icon className="w-3.5 h-3.5" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Tab Content */}
         <AnimatePresence mode="wait">
+          {/* ─── Analytics Tab ─── */}
+          {activeTab === "analytics" && (
+            <motion.div
+              key="analytics"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col gap-6"
+            >
+              <WinProbability match={match} />
+              <PlayerComparison sport={match.sport} teamA={match.team_a} teamB={match.team_b} />
+            </motion.div>
+          )}
+
+          {/* ─── Commentary Tab ─── */}
+          {activeTab === "commentary" && (
+            <motion.div
+              key="commentary"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <PulseCommentary matchId={match.id} sport={match.sport} teamA={match.team_a} teamB={match.team_b} isLive={match.live} />
+            </motion.div>
+          )}
+
+          {/* ─── Timeline Tab ─── */}
+          {activeTab === "timeline" && (
+            <motion.div
+              key="timeline"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LiveTimeline
+                matchId={match.id}
+                sport={match.sport}
+                teamA={match.team_a}
+                teamB={match.team_b}
+                isLive={match.live}
+              />
+            </motion.div>
+          )}
+
+          {/* ─── AI Report Tab ─── */}
+          {activeTab === "report" && (
+            <motion.div
+              key="report"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <MatchReport matchId={match.id} sport={match.sport} teamA={match.team_a} teamB={match.team_b} />
+            </motion.div>
+          )}
+
+          {/* ─── Predict Tab ─── */}
+          {activeTab === "predict" && (
+            <motion.div
+              key="predict"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <PulsePredictor match={match} />
+            </motion.div>
+          )}
+
+          {/* ─── Predictions Market Tab ─── */}
+          {activeTab === "market" && (
+            <motion.div
+              key="market"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <PredictionsMarket match={match} />
+            </motion.div>
+          )}
+
           {/* ─── Fan Space Tab ─── */}
           {activeTab === "fanspace" && (
             <motion.section
@@ -361,53 +549,6 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
                 </>
               )}
             </motion.section>
-          )}
-
-          {/* ─── Timeline Tab ─── */}
-          {activeTab === "timeline" && (
-            <motion.div
-              key="timeline"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <LiveTimeline
-                matchId={match.id}
-                sport={match.sport}
-                teamA={match.team_a}
-                teamB={match.team_b}
-                isLive={match.live}
-              />
-            </motion.div>
-          )}
-
-          {/* ─── Analytics Tab ─── */}
-          {activeTab === "analytics" && (
-            <motion.div
-              key="analytics"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-col gap-6"
-            >
-              <WinProbability match={match} />
-              <PlayerComparison sport={match.sport} teamA={match.team_a} teamB={match.team_b} />
-            </motion.div>
-          )}
-
-          {/* ─── Predict Tab ─── */}
-          {activeTab === "predict" && (
-            <motion.div
-              key="predict"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <PulsePredictor match={match} />
-            </motion.div>
           )}
         </AnimatePresence>
 

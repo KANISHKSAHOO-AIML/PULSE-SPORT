@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import SportToggle from "@/components/SportToggle";
@@ -12,6 +12,7 @@ import TrendingWidget from "@/components/TrendingWidget";
 import Leaderboard from "@/components/Leaderboard";
 import HeroSection from "@/components/HeroSection";
 import SectionDivider from "@/components/SectionDivider";
+import TeamPicker from "@/components/TeamPicker";
 
 // Dynamic import — no SSR to prevent hydration mismatch from scroll-dependent styles
 const ParallaxSportScene = dynamic(
@@ -40,6 +41,27 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState<"cricket" | "football">("cricket");
   const [cricketScroll, setCricketScroll] = useState(0);
   const [footballScroll, setFootballScroll] = useState(0);
+  const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
+
+  // Load personalization
+  useEffect(() => {
+    const stored = localStorage.getItem("pulse-favorite-teams");
+    if (stored) {
+      try { setFavoriteTeams(JSON.parse(stored)); } catch {}
+    }
+  }, []);
+
+  // Sort matches: favorites first
+  const sortByFavorites = useCallback((matchList: any[]) => {
+    if (favoriteTeams.length === 0) return matchList;
+    return [...matchList].sort((a, b) => {
+      const aFav = favoriteTeams.some(t => a.team_a?.toLowerCase().includes(t.toLowerCase()) || a.team_b?.toLowerCase().includes(t.toLowerCase()));
+      const bFav = favoriteTeams.some(t => b.team_a?.toLowerCase().includes(t.toLowerCase()) || b.team_b?.toLowerCase().includes(t.toLowerCase()));
+      if (aFav && !bFav) return -1;
+      if (!aFav && bFav) return 1;
+      return 0;
+    });
+  }, [favoriteTeams]);
 
   const cricketRef = useRef<HTMLDivElement>(null);
   const footballRef = useRef<HTMLDivElement>(null);
@@ -72,16 +94,7 @@ export default function Home() {
           }
         }
       } catch {
-        // Fall through to Supabase
-      }
-      
-      // Fallback: Direct Supabase query
-      const { data, error } = await supabase
-        .from("matches")
-        .select("*")
-        .order("live", { ascending: false });
-      if (!error && data) {
-        setMatches(data);
+        // API unavailable — show empty state
       }
       setLoading(false);
     };
@@ -134,49 +147,69 @@ export default function Home() {
     };
   }, []);
 
-  // Track scroll progress for each section
+  // Track scroll progress for each section — throttled with rAF to avoid jank
   useEffect(() => {
+    let rafId = 0;
+    let ticking = false;
+
     const handleScroll = () => {
-      // Cricket section scroll progress
-      if (cricketRef.current) {
-        const rect = cricketRef.current.getBoundingClientRect();
-        const sectionHeight = cricketRef.current.offsetHeight;
-        const viewH = window.innerHeight;
-        const visibleStart = viewH - rect.top;
-        const totalTravel = sectionHeight + viewH;
-        const progress = Math.max(0, Math.min(1, visibleStart / totalTravel));
-        setCricketScroll(progress);
-      }
+      if (ticking) return;
+      ticking = true;
+      rafId = requestAnimationFrame(() => {
+        // Cricket section scroll progress
+        if (cricketRef.current) {
+          const rect = cricketRef.current.getBoundingClientRect();
+          const sectionHeight = cricketRef.current.offsetHeight;
+          const viewH = window.innerHeight;
+          const visibleStart = viewH - rect.top;
+          const totalTravel = sectionHeight + viewH;
+          const progress = Math.max(0, Math.min(1, visibleStart / totalTravel));
+          // Only update state if the value changed meaningfully (avoid micro re-renders)
+          setCricketScroll(prev => Math.abs(prev - progress) > 0.005 ? progress : prev);
+        }
 
-      // Football section scroll progress
-      if (footballRef.current) {
-        const rect = footballRef.current.getBoundingClientRect();
-        const sectionHeight = footballRef.current.offsetHeight;
-        const viewH = window.innerHeight;
-        const visibleStart = viewH - rect.top;
-        const totalTravel = sectionHeight + viewH;
-        const progress = Math.max(0, Math.min(1, visibleStart / totalTravel));
-        setFootballScroll(progress);
-      }
+        // Football section scroll progress
+        if (footballRef.current) {
+          const rect = footballRef.current.getBoundingClientRect();
+          const sectionHeight = footballRef.current.offsetHeight;
+          const viewH = window.innerHeight;
+          const visibleStart = viewH - rect.top;
+          const totalTravel = sectionHeight + viewH;
+          const progress = Math.max(0, Math.min(1, visibleStart / totalTravel));
+          setFootballScroll(prev => Math.abs(prev - progress) > 0.005 ? progress : prev);
+        }
 
-      // Active section for quick nav
-      if (footballRef.current) {
-        const r = footballRef.current.getBoundingClientRect();
-        setActiveSection(r.top < window.innerHeight * 0.5 ? "football" : "cricket");
-      }
+        // Active section for quick nav
+        if (footballRef.current) {
+          const r = footballRef.current.getBoundingClientRect();
+          const next = r.top < window.innerHeight * 0.5 ? "football" : "cricket";
+          setActiveSection(prev => prev !== next ? next : prev);
+        }
+
+        ticking = false;
+      });
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
-  const cricketMatches = matches.filter((m) => m.sport === "cricket");
-  const footballMatches = matches.filter((m) => m.sport === "football");
+  const cricketMatches = useMemo(() => sortByFavorites(matches.filter((m) => m.sport === "cricket")), [matches, sortByFavorites]);
+  const footballMatches = useMemo(() => sortByFavorites(matches.filter((m) => m.sport === "football")), [matches, sortByFavorites]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-foreground">
+    <div className="min-h-screen bg-[#0a0a0a] text-foreground pb-20 md:pb-0">
       <Header />
+
+      {/* Team Picker Modal — Personalization */}
+      <TeamPicker onComplete={() => {
+        const stored = localStorage.getItem("pulse-favorite-teams");
+        if (stored) try { setFavoriteTeams(JSON.parse(stored)); } catch {}
+      }} />
 
       {/* Floating Quick Nav */}
       <SportToggle sport={activeSection} mode="quicknav" />

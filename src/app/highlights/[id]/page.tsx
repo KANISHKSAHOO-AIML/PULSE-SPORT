@@ -8,14 +8,6 @@ import ShareButtons from "@/components/ShareButtons";
 import { ArrowLeft, Eye, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
-// --- MOCK DATA (fallback if Supabase has no record) ---
-const MOCK_HIGHLIGHTS: Record<string, any> = {
-  "mock-high-1": { id: "mock-high-1", title: "90th Minute Bicycle Kick Goal — Champions League Final", sport: "football", thumbnail: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2938", duration: "04:15", views: "12.4M", video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-  "mock-high-2": { id: "mock-high-2", title: "Fastest T20 Century — 35 Balls", sport: "cricket", thumbnail: "https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=2940", duration: "06:30", views: "8.5M", video_url: "" },
-  "mock-high-3": { id: "mock-high-3", title: "Hat-trick Hero: Three Goals in 7 Minutes", sport: "football", thumbnail: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=2893", duration: "05:42", views: "6.1M", video_url: "" },
-  "mock-high-4": { id: "mock-high-4", title: "5 Wickets in 1 Over — Devastating Bowling Spell", sport: "cricket", thumbnail: "https://images.unsplash.com/photo-1531415074968-036ba1b575da?q=80&w=2938", duration: "03:55", views: "5.2M", video_url: "" },
-};
-
 /** Extract YouTube video ID from any YouTube URL format */
 function getYouTubeId(url: string): string | null {
   if (!url) return null;
@@ -38,15 +30,22 @@ export default function HighlightDetailsPage({ params }: { params: Promise<{ id:
 
   useEffect(() => {
     const fetchHighlight = async () => {
-      const { data, error } = await supabase.from("highlights").select("*").eq("id", id).single();
-      if (error || !data) {
-        setHighlight(MOCK_HIGHLIGHTS[id] || {
-          id, title: "Video Highlight", sport: "cricket",
-          thumbnail: "https://images.unsplash.com/photo-1531415074968-036ba1b575da?q=80&w=2938",
-          duration: "03:45", views: "0", video_url: "",
-        });
-      } else {
+      // Try Supabase first
+      const { data } = await supabase.from("highlights").select("*").eq("id", id).single();
+      if (data) {
         setHighlight(data);
+      } else {
+        // Try the YouTube API route to find by ID
+        try {
+          const res = await fetch("/api/highlights");
+          if (res.ok) {
+            const json = await res.json();
+            const found = (json.highlights || []).find((h: any) => h.id === id);
+            if (found) {
+              setHighlight(found);
+            }
+          }
+        } catch {}
       }
       setLoading(false);
     };

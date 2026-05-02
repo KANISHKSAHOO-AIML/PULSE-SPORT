@@ -8,6 +8,7 @@ import IPLPointsTable from "@/components/IPLPointsTable";
 import IPLSeasonCard from "@/components/IPLSeasonCard";
 import IPLSchedule from "@/components/IPLSchedule";
 import { IPL_SEASONS } from "@/lib/iplSeasons";
+import { IPL_2026_SCHEDULE } from "@/lib/ipl2026Schedule";
 import Footer from "@/components/Footer";
 
 export default function IPLPage() {
@@ -31,6 +32,13 @@ export default function IPLPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Dynamically find today's matches from the schedule
+  const todayStr = new Date().toISOString().split("T")[0]; // e.g. "2026-04-25"
+  const todayScheduleMatches = IPL_2026_SCHEDULE.filter(m => m.date.startsWith(todayStr));
+  const todaySubtitle = todayScheduleMatches.length > 0
+    ? todayScheduleMatches.map(m => `${m.team1} vs ${m.team2}`).join(" & ") + ` • ${new Date().toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}`
+    : `${new Date().toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}`;
+
   const currentSeason = IPL_SEASONS.find(s => s.year === 2026);
   const historicalSeasons = [...IPL_SEASONS].reverse();
   const years = historicalSeasons.map(s => s.year);
@@ -43,7 +51,7 @@ export default function IPLPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-foreground">
+    <div className="min-h-screen bg-[#0a0a0a] text-foreground pb-20 md:pb-0">
       <Header />
 
       {/* ═══ IPL HERO ═══ */}
@@ -122,7 +130,7 @@ export default function IPLPage() {
                     <Flame className="w-6 h-6 text-orange-500" />
                     Today&apos;s Match
                   </h2>
-                  <p className="text-zinc-500 text-sm mt-1">SRH vs CSK • April 18, 2026 • 7:30 PM IST</p>
+                  <p className="text-zinc-500 text-sm mt-1">{todaySubtitle}</p>
                 </div>
 
                 {/* Featured live card */}
@@ -142,8 +150,8 @@ export default function IPLPage() {
 
                 {!loading && liveMatches.length === 0 && (
                   <div className="mt-6 text-center text-zinc-500 bg-white/[0.02] rounded-2xl p-8 border border-white/5">
-                    <p className="text-lg mb-2">🏏 Match hasn&apos;t started yet</p>
-                    <p className="text-sm">The CSK vs SRH live card above will auto-update with scores once the match begins at 7:30 PM IST</p>
+                    <p className="text-lg mb-2">🏏 No matches found for today</p>
+                    <p className="text-sm">Check the schedule tab for upcoming fixtures</p>
                   </div>
                 )}
               </motion.div>

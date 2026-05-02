@@ -557,7 +557,7 @@ export default function PlayersPage() {
   const accentHex = activeSport === "cricket" ? "#00ffff" : "#39ff14";
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-foreground">
+    <div className="min-h-screen bg-[#0a0a0a] text-foreground pb-20 md:pb-0">
       <Header />
 
       {/* Hero */}

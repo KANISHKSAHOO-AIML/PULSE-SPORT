@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabase/client";
-import { MessageSquare, Heart, Medal, Lock } from "lucide-react";
+import { MessageSquare, Heart, Medal, Lock, Smile } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 interface CommentSectionProps {
   entityType: "news" | "highlight";
@@ -15,6 +18,7 @@ export default function CommentSection({ entityType, entityId }: CommentSectionP
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // Auth
   useEffect(() => {
@@ -70,7 +74,9 @@ export default function CommentSection({ entityType, entityId }: CommentSectionP
       // Optimistic: prepend the new comment to the list immediately
       setComments(prev => [data, ...prev]);
     } else if (error) {
-      console.error("Failed to post comment:", error);
+      console.error("Failed to post comment:", JSON.stringify(error, null, 2), error.message, error.details);
+      alert(`Database error: ${error.message || JSON.stringify(error)}`);
+      
       // Fallback: manually add a temporary comment so the user sees it
       setComments(prev => [{
         id: `temp-${Date.now()}`,
@@ -92,13 +98,20 @@ export default function CommentSection({ entityType, entityId }: CommentSectionP
       return;
     }
     
+    // Prevent liking temporary optimistic comments
+    if (commentId.startsWith("temp-")) {
+      alert("This comment is still being posted or failed to save. Please refresh.");
+      return;
+    }
+    
     // Call the PostgreSQL generic function defined in Stage C DB script
     const { data, error } = await supabase.rpc("toggle_comment_like", {
       p_comment_id: commentId
     });
 
     if (error) {
-      console.error("Failed to toggle like:", error);
+      console.error("Failed to toggle like:", JSON.stringify(error, null, 2), error.message);
+      alert(`Like error: ${error.message || JSON.stringify(error)}`);
       return;
     }
 
@@ -153,11 +166,33 @@ export default function CommentSection({ entityType, entityId }: CommentSectionP
                className="w-full bg-transparent border-b border-zinc-700 focus:border-blue-500 outline-none resize-none pt-2 pb-1 transition-colors min-h-[40px] text-sm"
                rows={2}
              />
-             <div className="flex justify-end">
+             <div className="flex items-center justify-between mt-1 relative">
+               <div className="flex items-center gap-2">
+                 <button
+                   type="button"
+                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                   className={`p-2 rounded-lg transition-colors ${showEmojiPicker ? 'bg-zinc-800 text-blue-400' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'}`}
+                   title="Add emoji"
+                 >
+                   <Smile className="w-5 h-5" />
+                 </button>
+                 
+                 {showEmojiPicker && (
+                   <div className="absolute top-10 left-0 z-50 shadow-2xl">
+                     <EmojiPicker 
+                       theme={"dark" as any} 
+                       onEmojiClick={(emojiData: any) => {
+                         setNewComment(prev => prev + emojiData.emoji);
+                         setShowEmojiPicker(false);
+                       }} 
+                     />
+                   </div>
+                 )}
+               </div>
                <button 
                  type="submit" 
                  disabled={!newComment.trim()}
-                 className="bg-white text-black text-sm font-bold py-2 px-5 rounded-lg hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                 className="bg-white text-black text-sm font-bold py-2 px-5 rounded-lg hover:bg-zinc-200 transition-colors disabled:opacity-50 shrink-0"
                >
                  Post
                </button>

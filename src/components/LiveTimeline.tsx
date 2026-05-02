@@ -42,24 +42,7 @@ const EVENT_STYLES: Record<string, { bg: string; border: string; icon: string; g
   normal:    { bg: "bg-zinc-800/50", border: "border-zinc-700/30", icon: "📌" },
 };
 
-/* ═══════════════════════════════════════════════════════════════
-   FALLBACK EVENTS (shown ONLY when no DB data exists)
-   ═══════════════════════════════════════════════════════════════ */
-const CRICKET_FALLBACK: TimelineEvent[] = [
-  { id: "c1", time: "19.6", type: "six", title: "SIX! Over the stands!", emoji: "6️⃣", description: "Massive hit over long-on! The crowd goes wild!", impact: "high" },
-  { id: "c2", time: "19.5", type: "boundary", title: "FOUR through covers", emoji: "4️⃣", description: "Elegant drive through the off-side gap", impact: "medium" },
-  { id: "c3", time: "19.4", type: "dot", title: "Dot ball", emoji: "⚫", description: "Good yorker, defended back to the bowler", impact: "low" },
-  { id: "c4", time: "19.3", type: "wicket", title: "WICKET! Caught behind!", emoji: "🔴", description: "Edge found! Keeper takes a sharp catch diving right", impact: "high" },
-  { id: "c5", time: "19.2", type: "run", title: "Single taken", emoji: "🏃", description: "Pushed to mid-on for a quick single", impact: "low" },
-];
 
-const FOOTBALL_FALLBACK: TimelineEvent[] = [
-  { id: "f1", time: "89'", type: "goal", title: "GOOOAL!! Late winner!", emoji: "⚽", description: "Header from the corner! The substitute makes an instant impact!", impact: "high" },
-  { id: "f2", time: "82'", type: "card", title: "Yellow Card", emoji: "🟨", description: "Late tackle from behind. Lucky not to see red", impact: "medium" },
-  { id: "f3", time: "76'", type: "save", title: "Amazing save!", emoji: "🧤", description: "Point-blank save! The keeper denies what seemed a certain goal", impact: "high" },
-  { id: "f4", time: "55'", type: "goal", title: "GOAL! Equalizer!", emoji: "⚽", description: "Brilliant counter-attack! Cool finish into the bottom corner", impact: "high" },
-  { id: "f5", time: "23'", type: "goal", title: "GOAL! Opening the scoring!", emoji: "⚽", description: "Curling free-kick from 25 yards! Top corner, no chance for the keeper", impact: "high" },
-];
 
 /* ═══════════════════════════════════════════════════════════════
    FAN EMOTION BAR
@@ -104,7 +87,7 @@ export default function LiveTimeline({ matchId, sport, teamA, teamB, isLive }: L
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [dataSource, setDataSource] = useState<"live" | "fallback">("live");
+  const [dataSource, setDataSource] = useState<"live" | "none">("none");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch timeline events from Supabase
@@ -142,17 +125,15 @@ export default function LiveTimeline({ matchId, sport, teamA, teamB, isLive }: L
             setEvents(matchData.timeline_events);
             setDataSource("live");
           } else {
-            // Fallback to demo data
-            const fallback = sport === "cricket" ? CRICKET_FALLBACK : FOOTBALL_FALLBACK;
-            setEvents(fallback);
-            setDataSource("fallback");
+            // No data available
+            setEvents([]);
+            setDataSource("none");
           }
         }
       } catch {
-        // Table might not exist — use fallback
-        const fallback = sport === "cricket" ? CRICKET_FALLBACK : FOOTBALL_FALLBACK;
-        setEvents(fallback);
-        setDataSource("fallback");
+        // Table might not exist — show empty state
+        setEvents([]);
+        setDataSource("none");
       }
       setLoading(false);
     };
@@ -245,11 +226,7 @@ export default function LiveTimeline({ matchId, sport, teamA, teamB, isLive }: L
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {dataSource === "fallback" && (
-            <span className="text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-amber-500/20">
-              Sample Data
-            </span>
-          )}
+
           <span className="text-[10px] text-zinc-600 font-mono">{events.length} events</span>
         </div>
       </div>
