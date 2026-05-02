@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const key = "AIzaSyA3A5clgNHqXa8kEDNF5bVEK9e57mB5BN4"; // From .env.local without quotes
+const key = "add your own api key"; // From .env.local without quotes
 const genAI = new GoogleGenerativeAI(key);
 
 async function test() {
