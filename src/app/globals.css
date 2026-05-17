@@ -280,6 +280,41 @@ body {
   box-shadow: 0 0 20px rgba(57, 255, 20, 0.12), 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
+/* ─── Match Card Hover Shadows (GPU-friendly CSS-only) ─────────── */
+/* Replaces Framer Motion boxShadow animation which forces paint */
+.match-card-hover-cricket {
+  transition: box-shadow 0.3s ease;
+}
+
+.match-card-hover-cricket:hover {
+  box-shadow: 0 24px 80px -20px rgba(0,0,0,0.6), 0 0 40px rgba(0,255,255,0.06);
+}
+
+.match-card-hover-football {
+  transition: box-shadow 0.3s ease;
+}
+
+.match-card-hover-football:hover {
+  box-shadow: 0 24px 80px -20px rgba(0,0,0,0.6), 0 0 40px rgba(57,255,20,0.06);
+}
+
+/* Widget hover shadows — moved from Framer Motion to CSS */
+.widget-hover-shadow {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.widget-hover-shadow:hover {
+  box-shadow: 0 20px 60px -15px rgba(0,0,0,0.5), 0 0 30px rgba(249,115,22,0.05);
+}
+
+.widget-hover-shadow-gold {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.widget-hover-shadow-gold:hover {
+  box-shadow: 0 20px 60px -15px rgba(0,0,0,0.5), 0 0 30px rgba(234,179,8,0.05);
+}
+
 /* ─── Floating Particles Keyframe ──────────────────────────────── */
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(0deg); }
@@ -1372,4 +1407,647 @@ body {
 
 .vote-confirmed {
   animation: voteConfirm 0.3s ease;
+}
+
+/* ─── Achievement Badge Animations ────────────────────────────── */
+@keyframes badgeReveal {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  60% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+  80% { transform: scale(0.9) rotate(-5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes badgeShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes goldenBurst {
+  0% { box-shadow: 0 0 0 0 rgba(251,191,36,0.7); }
+  70% { box-shadow: 0 0 0 30px rgba(251,191,36,0); }
+  100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+}
+
+@keyframes scoreCount {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes starFloat {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-80px) scale(0); opacity: 0; }
+}
+
+.badge-reveal { animation: badgeReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.badge-shimmer {
+  background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: badgeShimmer 2s linear infinite;
+}
+.badge-burst { animation: goldenBurst 1s ease-out; }
+.score-count { animation: scoreCount 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+.player-pick-card {
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.player-pick-card:hover {
+  transform: translateY(-2px);
+}
+.player-pick-card.selected {
+  border-color: rgba(0, 255, 255, 0.5) !important;
+  background: rgba(0, 255, 255, 0.08) !important;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CINEMATIC WELCOME OVERLAY — "Enter PulseSports" experience gate
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.cinematic-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #030305;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+/* ─── Aurora Background ─────────────────────────────────────────── */
+.cinematic-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cinematic-aurora::before {
+  content: "";
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  top: -15%;
+  left: -5%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 255, 255, 0.12) 0%, transparent 70%);
+  filter: blur(80px);
+  animation: cinAurora1 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+.cinematic-aurora::after {
+  content: "";
+  position: absolute;
+  width: 450px;
+  height: 450px;
+  bottom: -20%;
+  right: -5%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(57, 255, 20, 0.1) 0%, transparent 70%);
+  filter: blur(80px);
+  animation: cinAurora2 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes cinAurora1 {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(60px, -40px) scale(1.2); }
+  66% { transform: translate(-30px, 30px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes cinAurora2 {
+  0% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-50px, 40px) scale(0.85); }
+  100% { transform: translate(0, 0) scale(1.1); }
+}
+
+/* ─── Floating Particles ────────────────────────────────────────── */
+.cinematic-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cinematic-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 255, 255, 0.6);
+  animation: cinParticleFloat linear infinite;
+  will-change: transform;
+}
+
+@keyframes cinParticleFloat {
+  0% { transform: translateY(0) translateX(0); }
+  25% { transform: translateY(-30px) translateX(15px); }
+  50% { transform: translateY(-10px) translateX(-10px); }
+  75% { transform: translateY(-40px) translateX(20px); }
+  100% { transform: translateY(0) translateX(0); }
+}
+
+/* ─── Cursor-Tracking Radial Light ──────────────────────────────── */
+.cinematic-cursor-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    800px circle at var(--cursor-glow-x, 50%) var(--cursor-glow-y, 50%),
+    rgba(0, 255, 255, 0.04),
+    transparent 40%
+  );
+  transition: background 0.05s linear;
+}
+
+/* ─── Grid Overlay ──────────────────────────────────────────────── */
+.cinematic-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* ─── Center Content Container ──────────────────────────────────── */
+.cinematic-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  text-align: center;
+  padding: 24px;
+}
+
+/* ─── Logo Mark ─────────────────────────────────────────────────── */
+.cinematic-logo-mark {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.cinematic-logo-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 255, 255, 0.2);
+  animation: cinLogoRingSpin 8s linear infinite;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(0, 255, 255, 0.4) 25%,
+    transparent 50%,
+    rgba(57, 255, 20, 0.3) 75%,
+    transparent 100%
+  );
+  -webkit-mask: 
+    radial-gradient(transparent 62%, #000 63%);
+  mask: 
+    radial-gradient(transparent 62%, #000 63%);
+}
+
+@keyframes cinLogoRingSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.cinematic-logo-text {
+  font-size: 36px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #00FFFF, #39FF14);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
+  text-shadow: none;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3));
+}
+
+/* ─── Title ─────────────────────────────────────────────────────── */
+.cinematic-title {
+  font-size: clamp(36px, 7vw, 72px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 0.15em;
+}
+
+.cinematic-title-pulse {
+  background: linear-gradient(135deg, #ffffff, #a1a1aa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cinematic-title-sports {
+  background: linear-gradient(135deg, #00FFFF, #39FF14);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.2));
+}
+
+/* ─── Subtitle ──────────────────────────────────────────────────── */
+.cinematic-subtitle {
+  font-size: clamp(13px, 2vw, 17px);
+  color: rgba(161, 161, 170, 0.8);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 28px;
+}
+
+/* ─── Divider Line ──────────────────────────────────────────────── */
+.cinematic-divider {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.5), rgba(57, 255, 20, 0.5), transparent);
+  margin-bottom: 36px;
+  transform-origin: center;
+}
+
+/* ─── Enter Button ──────────────────────────────────────────────── */
+.cinematic-enter-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.cinematic-btn-glow {
+  position: absolute;
+  inset: -3px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(57, 255, 20, 0.1));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.cinematic-btn-glow-active {
+  opacity: 1;
+  animation: cinBtnPulse 2s ease-in-out infinite;
+}
+
+@keyframes cinBtnPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+.cinematic-btn-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.cinematic-enter-btn:hover .cinematic-btn-content {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 255, 255, 0.3);
+  box-shadow:
+    0 0 30px rgba(0, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.cinematic-enter-btn:active .cinematic-btn-content {
+  transform: scale(0.97);
+}
+
+.cinematic-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(57, 255, 20, 0.15));
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  color: #00FFFF;
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+}
+
+.cinematic-btn-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Audio Hint ────────────────────────────────────────────────── */
+.cinematic-audio-hint {
+  margin-top: 24px;
+  font-size: 11px;
+  color: rgba(161, 161, 170, 0.4);
+  letter-spacing: 0.06em;
+}
+
+/* ─── Scanlines ─────────────────────────────────────────────────── */
+.cinematic-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  z-index: 5;
+}
+
+/* ─── Corner Accents ────────────────────────────────────────────── */
+.cinematic-corner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.cinematic-corner-tl {
+  top: 24px;
+  left: 24px;
+  border-top: 1px solid rgba(0, 255, 255, 0.25);
+  border-left: 1px solid rgba(0, 255, 255, 0.25);
+}
+
+.cinematic-corner-tr {
+  top: 24px;
+  right: 24px;
+  border-top: 1px solid rgba(57, 255, 20, 0.25);
+  border-right: 1px solid rgba(57, 255, 20, 0.25);
+}
+
+.cinematic-corner-bl {
+  bottom: 24px;
+  left: 24px;
+  border-bottom: 1px solid rgba(57, 255, 20, 0.25);
+  border-left: 1px solid rgba(57, 255, 20, 0.25);
+}
+
+.cinematic-corner-br {
+  bottom: 24px;
+  right: 24px;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.25);
+  border-right: 1px solid rgba(0, 255, 255, 0.25);
+}
+
+/* ─── Glass Shatter Shards ──────────────────────────────────────── */
+.cinematic-shatter-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.cinematic-shard {
+  position: absolute;
+  background: linear-gradient(
+    135deg,
+    rgba(3, 3, 5, 0.9),
+    rgba(0, 255, 255, 0.04),
+    rgba(3, 3, 5, 0.95)
+  );
+  border: 1px solid rgba(0, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+  clip-path: polygon(
+    10% 0%,
+    90% 5%,
+    100% 85%,
+    75% 100%,
+    5% 90%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ULTRA-MODERN TECHNIQUES — Cursor Lighting, Holo Cards, Magnetic
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. Dynamic Cursor Lighting ──────────────────────────────────
+   Applies a radial spotlight that follows the cursor on hover.
+   Uses CSS custom properties --cursor-x and --cursor-y set by
+   the useCursorLight hook.
+   ──────────────────────────────────────────────────────────────── */
+.cursor-light-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.cursor-light-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+    rgba(0, 255, 255, 0.06),
+    transparent 40%
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cursor-light-card:hover::before {
+  opacity: 1;
+}
+
+/* Sport-specific light color variants */
+.cursor-light-card.light-cricket::before {
+  background: radial-gradient(
+    600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+    rgba(0, 255, 255, 0.07),
+    transparent 40%
+  );
+}
+
+.cursor-light-card.light-football::before {
+  background: radial-gradient(
+    600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+    rgba(57, 255, 20, 0.07),
+    transparent 40%
+  );
+}
+
+/* Edge highlight — adds a subtle border glow near the cursor */
+.cursor-light-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    400px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+    rgba(255, 255, 255, 0.03),
+    transparent 30%
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  mix-blend-mode: overlay;
+}
+
+.cursor-light-card:hover::after {
+  opacity: 1;
+}
+
+/* ─── 2. Holographic Depth Cards ──────────────────────────────────
+   Cards that tilt in 3D toward the cursor with a specular glare.
+   ──────────────────────────────────────────────────────────────── */
+.holo-card {
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.holo-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  mix-blend-mode: soft-light;
+}
+
+.holo-card:hover .holo-glare {
+  opacity: 1;
+}
+
+/* Depth layers for stacked content within holo cards */
+.holo-layer-1 {
+  transform: translateZ(0px);
+}
+
+.holo-layer-2 {
+  transform: translateZ(15px);
+}
+
+.holo-layer-3 {
+  transform: translateZ(30px);
+}
+
+/* ─── 3. Magnetic Button Effects ──────────────────────────────────
+   Ripple and glow on magnetic buttons for tactile feedback.
+   ──────────────────────────────────────────────────────────────── */
+.magnetic-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: box-shadow 0.3s ease;
+}
+
+.magnetic-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.08),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.magnetic-btn:hover::before {
+  opacity: 1;
+}
+
+.magnetic-btn:active {
+  transform: scale(0.97);
+}
+
+.magnetic-btn.magnetic-cricket:hover {
+  box-shadow: 0 0 24px rgba(0, 255, 255, 0.12), 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.magnetic-btn.magnetic-football:hover {
+  box-shadow: 0 0 24px rgba(57, 255, 20, 0.12), 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Responsive: Mobile adjustments ────────────────────────────── */
+@media (max-width: 640px) {
+  .cinematic-title {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .cinematic-logo-mark {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 24px;
+  }
+
+  .cinematic-logo-text {
+    font-size: 28px;
+  }
+
+  .cinematic-btn-content {
+    padding: 14px 28px;
+  }
+
+  .cinematic-btn-label {
+    font-size: 13px;
+  }
+
+  .cinematic-corner {
+    width: 28px;
+    height: 28px;
+  }
+
+  .cinematic-corner-tl,
+  .cinematic-corner-tr {
+    top: 16px;
+  }
+
+  .cinematic-corner-bl,
+  .cinematic-corner-br {
+    bottom: 16px;
+  }
+
+  .cinematic-corner-tl,
+  .cinematic-corner-bl {
+    left: 16px;
+  }
+
+  .cinematic-corner-tr,
+  .cinematic-corner-br {
+    right: 16px;
+  }
 }

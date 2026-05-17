@@ -1,8 +1,16 @@
 "use client";
 
 import { useRef, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { useEffect } from "react";
+
+// ─── Invalidator — triggers re-render only when scroll changes ──────
+function FrameInvalidator({ progress }: { progress: number }) {
+  const { invalidate } = useThree();
+  useEffect(() => { invalidate(); }, [progress, invalidate]);
+  return null;
+}
 
 // ─── Football Player ────────────────────────────────────────────────
 function FootballPlayer({ progress }: { progress: number }) {
@@ -429,13 +437,14 @@ function CameraController({ progress }: { progress: number }) {
 export default function FootballScene({ scrollProgress }: { scrollProgress: number }) {
   return (
     <Canvas
-      shadows
+      frameloop="demand"
       dpr={[1, 1.5]}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
       style={{ background: "transparent" }}
     >
+      <FrameInvalidator progress={scrollProgress} />
       <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 15, 5]} intensity={1.8} castShadow color="#ffffff" />
+      <directionalLight position={[10, 15, 5]} intensity={1.8} color="#ffffff" />
       <spotLight position={[-8, 12, -10]} intensity={1} angle={0.35} penumbra={0.5} color="#39FF14" distance={30} />
       <spotLight position={[8, 12, -10]} intensity={0.8} angle={0.35} penumbra={0.5} color="#ffffff" distance={30} />
       <hemisphereLight args={["#87CEEB", "#1a6e1a", 0.3]} />

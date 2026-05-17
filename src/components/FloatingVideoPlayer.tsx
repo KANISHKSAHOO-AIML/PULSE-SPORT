@@ -19,12 +19,20 @@ export default function FloatingVideoPlayer({ title, thumbnail, duration, sport,
   useEffect(() => {
     if (dismissed) return;
 
+    let ticking = false;
     const handleScroll = () => {
-      if (!videoRef.current) return;
-      const rect = videoRef.current.getBoundingClientRect();
-      // Show PiP when video is fully scrolled out of viewport
-      const isOut = rect.bottom < -50;
-      setShow(isOut);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (videoRef.current) {
+            const rect = videoRef.current.getBoundingClientRect();
+            // Show PiP when video is fully scrolled out of viewport
+            const isOut = rect.bottom < -50;
+            setShow(isOut);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });

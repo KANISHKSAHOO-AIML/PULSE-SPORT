@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, Zap, Users, Trophy, Radio } from "lucide-react";
 import { supabase } from "@/utils/supabase/client";
+import MagneticButton from "@/components/MagneticButton";
 
 const HERO_WORDS = ["THE PULSE", "OF SPORTS"];
 const FLOATING_EMOJIS = [
@@ -207,18 +208,20 @@ export default function HeroSection() {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="flex items-center justify-center gap-4"
           >
-            <button
+            <MagneticButton
               onClick={scrollToContent}
-              className="px-6 py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-zinc-200 transition-all hover:scale-105 active:scale-95"
+              className="magnetic-btn px-6 py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-zinc-200 transition-all cursor-pointer"
+              strength={0.25}
             >
               View Live Scores
-            </button>
-            <a
+            </MagneticButton>
+            <MagneticButton
               href="/players"
-              className="px-6 py-3 rounded-xl border border-zinc-700 text-white font-bold text-sm hover:bg-white/5 transition-all hover:scale-105 active:scale-95"
+              className="magnetic-btn px-6 py-3 rounded-xl border border-zinc-700 text-white font-bold text-sm hover:bg-white/5 transition-all cursor-pointer"
+              strength={0.25}
             >
               Player Stats ⚡
-            </a>
+            </MagneticButton>
           </motion.div>
         )}
       </div>

@@ -13,6 +13,7 @@ import Leaderboard from "@/components/Leaderboard";
 import HeroSection from "@/components/HeroSection";
 import SectionDivider from "@/components/SectionDivider";
 import TeamPicker from "@/components/TeamPicker";
+import HoloCard from "@/components/HoloCard";
 
 // Dynamic import — no SSR to prevent hydration mismatch from scroll-dependent styles
 const ParallaxSportScene = dynamic(
@@ -460,21 +461,27 @@ export default function Home() {
                 { sport: "Tennis", emoji: "🎾", color: "from-lime-500/10 to-lime-500/5", border: "border-lime-500/15", text: "text-lime-400", desc: "Grand Slams & ATP/WTA" },
                 { sport: "Formula 1", emoji: "🏎️", color: "from-red-500/10 to-red-500/5", border: "border-red-500/15", text: "text-red-400", desc: "Race results & standings" },
               ].map((item, i) => (
-                <motion.div
+                <HoloCard
                   key={item.sport}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`rounded-2xl border ${item.border} bg-gradient-to-br ${item.color} p-6 text-center relative overflow-hidden group hover:scale-[1.02] transition-transform`}
+                  tiltMax={12}
+                  sport="cricket"
+                  className="rounded-2xl"
                 >
-                  <div className="absolute top-2 right-3 text-[9px] bg-white/5 text-zinc-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-white/5">
-                    Coming Soon
-                  </div>
-                  <span className="text-5xl block mb-3 group-hover:scale-110 transition-transform">{item.emoji}</span>
-                  <h3 className={`text-lg font-black ${item.text} mb-1`}>{item.sport}</h3>
-                  <p className="text-xs text-zinc-500">{item.desc}</p>
-                </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className={`rounded-2xl border ${item.border} bg-gradient-to-br ${item.color} p-6 text-center relative overflow-hidden group`}
+                  >
+                    <div className="absolute top-2 right-3 text-[9px] bg-white/5 text-zinc-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-white/5">
+                      Coming Soon
+                    </div>
+                    <span className="text-5xl block mb-3 group-hover:scale-110 transition-transform">{item.emoji}</span>
+                    <h3 className={`text-lg font-black ${item.text} mb-1`}>{item.sport}</h3>
+                    <p className="text-xs text-zinc-500">{item.desc}</p>
+                  </motion.div>
+                </HoloCard>
               ))}
             </div>
           </motion.div>

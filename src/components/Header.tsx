@@ -17,6 +17,7 @@ const navLinks = [
   { href: "/news", label: "News", icon: Newspaper, emoji: "📰", accentColor: "#3b82f6" },
   { href: "/highlights", label: "Highlights", icon: Film, emoji: "🎬", accentColor: "#8b5cf6" },
   { href: "/players", label: "Players", icon: Star, emoji: "⭐", accentColor: "#06b6d4" },
+  { href: "/custom-matches", label: "Custom Matches", icon: Activity, emoji: "⚔️", accentColor: "#10b981" },
 ];
 
 export default function Header() {
@@ -213,7 +214,7 @@ export default function Header() {
                 {navLinks.map((link, index) => (
                   <React.Fragment key={link.href}>
                     {/* Add a spacer in the middle so items don't hide behind the logo hub */}
-                    {index === 2 && <div style={{ height: '80px', width: '100%' }} aria-hidden="true" />}
+                    {index === 3 && <div style={{ height: '80px', width: '100%' }} aria-hidden="true" />}
                     <motion.div
                       initial={{ opacity: 0, x: -30 }}
                       animate={{ opacity: 1, x: 0 }}

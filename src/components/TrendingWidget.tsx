@@ -51,12 +51,9 @@ export default function TrendingWidget() {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      whileHover={{
-        y: -4,
-        boxShadow: "0 20px 60px -15px rgba(0,0,0,0.5), 0 0 30px rgba(249,115,22,0.05)",
-      }}
+      whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className="glass-depth-2 rounded-2xl overflow-hidden"
+      className="glass-depth-2 rounded-2xl overflow-hidden widget-hover-shadow"
     >
       {/* Header */}
       <div className="p-4 border-b border-zinc-800 flex items-center gap-2">

@@ -161,13 +161,20 @@ function SportNewsSection({ sport, articles, parallaxSport }: { sport: "cricket"
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      if (ref.current) {
-        const rect = ref.current.getBoundingClientRect();
-        const h = ref.current.offsetHeight;
-        const vh = window.innerHeight;
-        const progress = Math.max(0, Math.min(1, (vh - rect.top) / (h + vh)));
-        setScrollProgress(progress);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (ref.current) {
+            const rect = ref.current.getBoundingClientRect();
+            const h = ref.current.offsetHeight;
+            const vh = window.innerHeight;
+            const progress = Math.max(0, Math.min(1, (vh - rect.top) / (h + vh)));
+            setScrollProgress(progress);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -286,11 +293,18 @@ export default function NewsPage() {
 
   // Track active section for quick nav
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const fb = document.getElementById("news-football");
-      if (fb) {
-        const r = fb.getBoundingClientRect();
-        setActiveSection(r.top < window.innerHeight * 0.5 ? "football" : "cricket");
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const fb = document.getElementById("news-football");
+          if (fb) {
+            const r = fb.getBoundingClientRect();
+            setActiveSection(r.top < window.innerHeight * 0.5 ? "football" : "cricket");
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -333,7 +347,7 @@ export default function NewsPage() {
               <span className="text-cricket text-xs font-bold uppercase tracking-widest">Breaking Stories</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight">Sports News</h1>
-            <p className="text-zinc-500 text-sm mt-2">Real-time coverage powered by ESPN</p>
+            <p className="text-zinc-500 text-sm mt-2">Real-time coverage by PulseSports</p>
           </motion.div>
         </div>
       </div>

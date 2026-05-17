@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
-import { PlayCircle, Eye, Flame, Clapperboard } from "lucide-react";
+import { PlayCircle, Eye, Flame, Clapperboard, Trophy } from "lucide-react";
 import { supabase } from "@/utils/supabase/client";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +25,8 @@ const ReelsView = dynamic(
 function VideoCard({ video, index }: { video: any; index: number }) {
   const accent = video.sport === "cricket" ? "text-cricket" : "text-football";
   const glow = video.sport === "cricket" ? "card-glow-cricket" : "card-glow-football";
+  const hasViews = video.views && video.views !== "" && video.views !== "—";
+  const isScoreBat = video.source === "scorebat";
 
   return (
     <motion.div
@@ -42,13 +44,38 @@ function VideoCard({ video, index }: { video: any; index: number }) {
             </div>
           </div>
           <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-mono font-bold px-2 py-1 rounded backdrop-blur-sm tracking-wider">
-            {video.duration}
+            {video.duration || "▶"}
           </div>
+          {isScoreBat && video.competition && (
+            <div className="absolute top-2 left-2">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider backdrop-blur-md bg-black/60 text-zinc-300 border border-zinc-700">
+                <Trophy className="w-2.5 h-2.5" />
+                {video.competition.length > 30 ? video.competition.slice(0, 30) + "…" : video.competition}
+              </span>
+            </div>
+          )}
         </div>
         <div className="p-4">
-          <h3 className="text-sm font-bold line-clamp-2 leading-snug mb-2 group-hover:text-white transition-colors">{video.title}</h3>
-          <div className="flex items-center text-xs text-zinc-500 gap-2">
-            <Eye className="w-3.5 h-3.5" /><span>{video.views} views</span>
+          <h3 className="text-sm font-bold line-clamp-2 leading-snug mb-1.5 group-hover:text-white transition-colors">{video.title}</h3>
+          {isScoreBat && video.teams && (
+            <p className="text-xs text-zinc-400 mb-1.5 font-medium">
+              {video.teams.home} vs {video.teams.away}
+            </p>
+          )}
+          <div className="flex items-center text-xs text-zinc-500 gap-3">
+            {hasViews && (
+              <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" />{video.views} views</span>
+            )}
+            {video.created_at && (
+              <span className="text-zinc-600 text-[10px]">
+                {new Date(video.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            )}
+            {video.source && (
+              <span className="ml-auto text-[9px] text-zinc-600 bg-zinc-800/50 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                {video.source === "scorebat" ? "ScoreBat" : video.source === "youtube-rss" ? "YouTube" : video.source}
+              </span>
+            )}
           </div>
         </div>
       </Link>
@@ -59,6 +86,9 @@ function VideoCard({ video, index }: { video: any; index: number }) {
 // Hero highlight
 function HeroHighlight({ video, sport }: { video: any; sport: string }) {
   const accent = sport === "cricket" ? "text-cricket" : "text-football";
+  const hasViews = video.views && video.views !== "" && video.views !== "—";
+  const isScoreBat = video.source === "scorebat";
+
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-6">
       <Link href={`/highlights/${video.id}`} className="group block relative rounded-2xl overflow-hidden glass-depth-2 hover:border-zinc-600 transition-all">
@@ -70,14 +100,37 @@ function HeroHighlight({ video, sport }: { video: any; sport: string }) {
               <PlayCircle className={`w-12 h-12 ${accent}`} strokeWidth={1.5} />
             </div>
           </div>
-          <div className="absolute right-4 bottom-4 px-3 py-1.5 bg-black/80 text-white font-mono text-sm font-bold tracking-widest rounded-md backdrop-blur-md">{video.duration}</div>
+          <div className="absolute right-4 bottom-4 px-3 py-1.5 bg-black/80 text-white font-mono text-sm font-bold tracking-widest rounded-md backdrop-blur-md">{video.duration || "▶ Highlights"}</div>
+          {isScoreBat && video.competition && (
+            <div className="absolute top-4 right-4">
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md bg-black/60 text-zinc-200 border border-zinc-600">
+                <Trophy className="w-3 h-3 text-yellow-400" />
+                {video.competition}
+              </span>
+            </div>
+          )}
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md mb-3 ${
               sport === "cricket" ? "bg-cricket/15 text-cricket border border-cricket/30" : "bg-football/15 text-football border border-football/30"
             }`}>{sport}</span>
             <h2 className="text-xl md:text-3xl font-black text-white leading-tight mb-2 max-w-2xl">{video.title}</h2>
-            <div className="flex items-center gap-3 text-zinc-400 text-sm">
-              <Eye className="w-4 h-4" /><span>{video.views} views</span>
+            <div className="flex flex-wrap items-center gap-3 text-zinc-400 text-sm">
+              {isScoreBat && video.teams && (
+                <span className="font-semibold text-zinc-300">{video.teams.home} vs {video.teams.away}</span>
+              )}
+              {hasViews && (
+                <span className="flex items-center gap-1"><Eye className="w-4 h-4" />{video.views} views</span>
+              )}
+              {video.created_at && (
+                <span className="text-zinc-500 text-xs">
+                  {new Date(video.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </span>
+              )}
+              {video.source && (
+                <span className="text-[9px] text-zinc-500 bg-zinc-800/60 px-2 py-0.5 rounded-full uppercase tracking-wider border border-zinc-700/50">
+                  via {video.source === "scorebat" ? "ScoreBat" : video.source === "youtube-rss" ? "YouTube" : video.source}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -92,13 +145,20 @@ function SportHighlightSection({ sport, highlights, parallaxSport }: { sport: "c
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      if (ref.current) {
-        const rect = ref.current.getBoundingClientRect();
-        const h = ref.current.offsetHeight;
-        const vh = window.innerHeight;
-        const progress = Math.max(0, Math.min(1, (vh - rect.top) / (h + vh)));
-        setScrollProgress(progress);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (ref.current) {
+            const rect = ref.current.getBoundingClientRect();
+            const h = ref.current.offsetHeight;
+            const vh = window.innerHeight;
+            const progress = Math.max(0, Math.min(1, (vh - rect.top) / (h + vh)));
+            setScrollProgress(progress);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -190,11 +250,18 @@ export default function HighlightsPage() {
   }, []);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const fb = document.getElementById("highlights-football");
-      if (fb) {
-        const r = fb.getBoundingClientRect();
-        setActiveSection(r.top < window.innerHeight * 0.5 ? "football" : "cricket");
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const fb = document.getElementById("highlights-football");
+          if (fb) {
+            const r = fb.getBoundingClientRect();
+            setActiveSection(r.top < window.innerHeight * 0.5 ? "football" : "cricket");
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });

@@ -8,7 +8,7 @@ import IPLPointsTable from "@/components/IPLPointsTable";
 import IPLSeasonCard from "@/components/IPLSeasonCard";
 import IPLSchedule from "@/components/IPLSchedule";
 import { IPL_SEASONS } from "@/lib/iplSeasons";
-import { IPL_2026_SCHEDULE } from "@/lib/ipl2026Schedule";
+import { getDynamicSchedule } from "@/lib/ipl2026Schedule";
 import Footer from "@/components/Footer";
 
 export default function IPLPage() {
@@ -28,13 +28,14 @@ export default function IPLPage() {
       setLoading(false);
     };
     fetchIPL();
-    const interval = setInterval(fetchIPL, 60000);
+    const interval = setInterval(fetchIPL, 120000); // Poll every 2 minutes
     return () => clearInterval(interval);
   }, []);
 
   // Dynamically find today's matches from the schedule
-  const todayStr = new Date().toISOString().split("T")[0]; // e.g. "2026-04-25"
-  const todayScheduleMatches = IPL_2026_SCHEDULE.filter(m => m.date.startsWith(todayStr));
+  const todayStr = new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const dynamicSchedule = getDynamicSchedule();
+  const todayScheduleMatches = dynamicSchedule.filter(m => m.date.startsWith(todayStr));
   const todaySubtitle = todayScheduleMatches.length > 0
     ? todayScheduleMatches.map(m => `${m.team1} vs ${m.team2}`).join(" & ") + ` • ${new Date().toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}`
     : `${new Date().toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}`;

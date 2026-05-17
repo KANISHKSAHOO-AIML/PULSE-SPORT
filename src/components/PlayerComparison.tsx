@@ -243,7 +243,8 @@ export default function PlayerComparison({ sport, teamA, teamB }: PlayerComparis
           })}
 
           {/* Stat value dots Player A */}
-          {playerA.stats.map((val: number, i: number) => {
+          {playerA.stats.map((v: number, i: number) => {
+            const val = Number(v) || 0;
             const r = (val / 100) * maxR;
             const p = polarToCartesian(cx, cy, r, i * angleStep);
             return <circle key={`a-${i}`} cx={p.x} cy={p.y} r="3" fill="#3b82f6" />;
@@ -251,7 +252,8 @@ export default function PlayerComparison({ sport, teamA, teamB }: PlayerComparis
 
           {/* Stat value dots Player B */}
           {showB &&
-            playerB.stats.map((val: number, i: number) => {
+            playerB.stats.map((v: number, i: number) => {
+              const val = Number(v) || 0;
               const r = (val / 100) * maxR;
               const p = polarToCartesian(cx, cy, r, i * angleStep);
               return <circle key={`b-${i}`} cx={p.x} cy={p.y} r="3" fill="#ef4444" />;

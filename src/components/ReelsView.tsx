@@ -132,9 +132,11 @@ export default function ReelsView({ highlights, onClose }: ReelsViewProps) {
       >
         {highlights.map((h, i) => {
           const ytId = getYouTubeId(h.video_url || "");
+          const scoreBatSrc = h.embed_html ? (h.embed_html.match(/src='([^']+)'/) || h.embed_html.match(/src="([^"]+)"/))?.[1] : null;
           const isActive = i === activeIndex;
           const sportColor = h.sport === "cricket" ? "text-cricket" : "text-football";
           const sportBg = h.sport === "cricket" ? "bg-cricket/15 border-cricket/30" : "bg-football/15 border-football/30";
+          const hasViews = h.views && h.views !== "" && h.views !== "—";
 
           return (
             <div
@@ -142,8 +144,16 @@ export default function ReelsView({ highlights, onClose }: ReelsViewProps) {
               data-index={i}
               className="w-full h-screen flex items-center justify-center relative reel-item"
             >
-              {/* Background — thumbnail or video */}
-              {ytId && isActive ? (
+              {/* Background — ScoreBat embed, YouTube, or thumbnail */}
+              {h.source === "scorebat" && scoreBatSrc && isActive ? (
+                <iframe
+                  src={scoreBatSrc}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  allow="autoplay; fullscreen"
+                  allowFullScreen
+                  title={h.title}
+                />
+              ) : ytId && isActive ? (
                 <iframe
                   src={`https://www.youtube.com/embed/${ytId}?autoplay=1&controls=0&loop=1&mute=1&rel=0&modestbranding=1&playlist=${ytId}`}
                   className="absolute inset-0 w-full h-full object-cover"
@@ -171,15 +181,27 @@ export default function ReelsView({ highlights, onClose }: ReelsViewProps) {
 
               {/* Bottom info — like Instagram Reels */}
               <div className="absolute bottom-0 left-0 right-16 p-6 z-10">
-                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md mb-3 ${sportBg} ${sportColor}`}>
-                  {h.sport === "cricket" ? "🏏" : "⚽"} {h.sport}
-                </span>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md ${sportBg} ${sportColor}`}>
+                    {h.sport === "cricket" ? "🏏" : "⚽"} {h.sport}
+                  </span>
+                  {h.competition && (
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider backdrop-blur-md bg-black/50 text-zinc-300 border border-zinc-700">
+                      🏆 {h.competition}
+                    </span>
+                  )}
+                </div>
                 <h3 className="text-white font-black text-xl md:text-2xl leading-tight mb-2 max-w-lg">
                   {h.title}
                 </h3>
                 <div className="flex items-center gap-4 text-zinc-300 text-sm">
-                  <span className="flex items-center gap-1">👁 {h.views || "0"} views</span>
-                  <span className="flex items-center gap-1">⏱ {h.duration || "—"}</span>
+                  {hasViews && <span className="flex items-center gap-1">👁 {h.views} views</span>}
+                  <span className="flex items-center gap-1">⏱ {h.duration || "Highlights"}</span>
+                  {h.source && (
+                    <span className="text-[9px] text-zinc-500 bg-zinc-800/60 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      {h.source === "scorebat" ? "ScoreBat" : "YouTube"}
+                    </span>
+                  )}
                 </div>
               </div>
 

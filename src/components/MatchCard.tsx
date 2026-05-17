@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { MoreVertical, Flame, Share2, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import ShareButtons from "@/components/ShareButtons";
 import { IPL_TEAMS } from "@/lib/iplTeams";
+import { useCursorLight } from "@/hooks/useCursorLight";
 
 function getTeamLogo(name: string): string | undefined {
   const lower = name.toLowerCase();
@@ -51,10 +52,12 @@ interface MatchCardProps {
   };
 }
 
-export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
+function MatchCard({ sport, index = 0, match }: MatchCardProps) {
   const accentColor = sport === "cricket" ? "text-cricket" : "text-football";
-  const bgAccentColor = sport === "cricket" ? "bg-cricket/10" : "bg-football/10";
   const borderAccentColor = sport === "cricket" ? "border-cricket/30" : "border-football/30";
+
+  // Dynamic cursor lighting — cursor becomes a light source on this card
+  const lightRef = useCursorLight<HTMLDivElement>();
   
   // Score flash tracking
   const prevScoreA = useRef(match.scoreA);
@@ -84,9 +87,10 @@ export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
   const [cheersA, setCheersA] = useState(0);
   const [cheersB, setCheersB] = useState(0);
 
-  // Hype Score State
-  const [hypeScore, setHypeScore] = useState(0);
-  const [hypeWaveform, setHypeWaveform] = useState<number[]>(Array(24).fill(3));
+  // Hype Score — ref-based to avoid re-rendering entire card on every tick
+  const hypeScoreRef = useRef(0);
+  const waveformContainerRef = useRef<HTMLDivElement>(null);
+  const hypeLabelRef = useRef<HTMLSpanElement>(null);
 
   // Poll for cheers if match is live
   useEffect(() => {
@@ -100,76 +104,80 @@ export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
         setCheersA(data.teamA || 0);
         setCheersB(data.teamB || 0);
         
-        // Calculate hype from total cheers velocity (simple approach)
         const totalNow = (data.teamA || 0) + (data.teamB || 0);
-        setHypeScore(prev => {
-          const diff = totalNow - prev;
-          // Hype decays toward 0, spikes when cheers flow in
-          const newHype = Math.min(100, Math.max(0, diff > 0 ? Math.min(100, diff * 8) : Math.max(0, prev - 3)));
-          return newHype;
-        });
-      } catch (err) {
-        // Ignore fetch errors to keep console clean
+        const prev = hypeScoreRef.current;
+        const diff = totalNow - prev;
+        hypeScoreRef.current = Math.min(100, Math.max(0, diff > 0 ? Math.min(100, diff * 8) : Math.max(0, prev - 3)));
+      } catch {
+        // Ignore fetch errors
       }
     };
 
     fetchCheers();
-    const interval = setInterval(fetchCheers, 10000); // Poll every 10s
+    const interval = setInterval(fetchCheers, 10000);
     return () => clearInterval(interval);
   }, [match.id, match.live]);
 
-  // Animate hype waveform
+  // Ref-based waveform animation — ZERO React re-renders
+  // Directly mutates DOM via refs for 60FPS waveform
   useEffect(() => {
     if (!match.live) return;
     const interval = setInterval(() => {
-      setHypeWaveform(prev => 
-        prev.map(() => Math.max(3, Math.random() * (hypeScore / 100) * 28 + 3))
-      );
+      const container = waveformContainerRef.current;
+      const label = hypeLabelRef.current;
+      if (!container) return;
+
+      const hype = hypeScoreRef.current;
+      const bars = container.children;
+      for (let i = 0; i < bars.length; i++) {
+        const barH = Math.max(3, Math.random() * (hype / 100) * 28 + 3);
+        (bars[i] as HTMLElement).style.height = `${barH}px`;
+      }
+
+      // Update hype label text + color without React re-render
+      if (label) {
+        const text = hype > 80 ? '🔥 ROARING' : hype > 50 ? '📢 LOUD' : hype > 20 ? '👏 BUZZING' : '😶 QUIET';
+        const color = hype > 80 ? '#f87171' : hype > 50 ? '#fb923c' : hype > 20 ? '#facc15' : '#71717a';
+        label.textContent = text;
+        label.style.color = color;
+      }
     }, 500);
     return () => clearInterval(interval);
-  }, [hypeScore, match.live]);
+  }, [match.live]);
 
-  const handleCheer = async (team: "A" | "B") => {
-    // Optimistic UI update
+  const handleCheer = useCallback(async (team: "A" | "B") => {
     if (team === "A") setCheersA(prev => prev + 1);
     else setCheersB(prev => prev + 1);
 
-    // Bump hype score immediately
-    setHypeScore(prev => Math.min(100, prev + 12));
+    hypeScoreRef.current = Math.min(100, hypeScoreRef.current + 12);
 
-    // Fire & forget to Redis API
     try {
       await fetch('/api/cheer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ matchId: match.id, team })
       });
-    } catch (e) {
-      console.error("Failed to cheer");
+    } catch {
+      // Fire & forget
     }
-  };
+  }, [match.id]);
 
   const totalCheers = cheersA + cheersB;
   const percentageA = totalCheers === 0 ? 50 : (cheersA / totalCheers) * 100;
   const percentageB = totalCheers === 0 ? 50 : (cheersB / totalCheers) * 100;
 
-  const hypeLabel = hypeScore > 80 ? '🔥 ROARING' : hypeScore > 50 ? '📢 LOUD' : hypeScore > 20 ? '👏 BUZZING' : '😶 QUIET';
-  const hypeBarClass = hypeScore > 80 ? 'hype-bar-roaring' : hypeScore > 50 ? 'hype-bar-loud' : hypeScore > 20 ? 'hype-bar-buzzing' : 'hype-bar-quiet';
-  const hypeLabelColor = hypeScore > 80 ? 'text-red-400 animate-pulse' : hypeScore > 50 ? 'text-orange-400' : hypeScore > 20 ? 'text-yellow-400' : 'text-zinc-500';
+  // Derive initial hype label/class for first render only
+  const hypeInit = hypeScoreRef.current;
+  const hypeBarClass = hypeInit > 80 ? 'hype-bar-roaring' : hypeInit > 50 ? 'hype-bar-loud' : hypeInit > 20 ? 'hype-bar-buzzing' : 'hype-bar-quiet';
 
   return (
-    <motion.div 
+    <motion.div
+      ref={lightRef}
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      whileHover={{
-        y: -6,
-        scale: 1.015,
-        boxShadow: sport === "cricket"
-          ? "0 24px 80px -20px rgba(0,0,0,0.6), 0 0 40px rgba(0,255,255,0.06)"
-          : "0 24px 80px -20px rgba(0,0,0,0.6), 0 0 40px rgba(57,255,20,0.06)",
-      }}
+      whileHover={{ y: -6, scale: 1.015 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className={`p-5 rounded-2xl glass-depth-2 match-card-animated-border card-${sport} border ${borderAccentColor} flex flex-col gap-4 relative overflow-hidden z-10`}
+      className={`p-5 rounded-2xl glass-depth-2 match-card-animated-border card-${sport} border ${borderAccentColor} flex flex-col gap-4 relative overflow-hidden z-10 cursor-light-card light-${sport} match-card-hover-${sport}`}
     >
       {/* Bottom cheer bar indicators */}
       <div 
@@ -265,24 +273,24 @@ export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
         </div>
       )}
 
-      {/* ⚡ Hype Score / Crowd Noise Visualizer — Only on live matches */}
+      {/* ⚡ Hype Score / Crowd Noise Visualizer — ref-based, ZERO re-renders */}
       {match.live && (
         <div className="mt-1">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1">
               <Volume2 className="w-3 h-3" /> Crowd Noise
             </span>
-            <span className={`text-[10px] font-black ${hypeLabelColor}`}>
-              {hypeLabel}
+            <span ref={hypeLabelRef} className="text-[10px] font-black text-zinc-500">
+              😶 QUIET
             </span>
           </div>
-          {/* Audio waveform bars */}
-          <div className="flex items-end gap-[2px] h-7 rounded-lg overflow-hidden bg-zinc-900/50 px-1 py-1">
-            {hypeWaveform.map((barH, i) => (
+          {/* Audio waveform bars — DOM-mutated via ref, no React state */}
+          <div ref={waveformContainerRef} className="flex items-end gap-[2px] h-7 rounded-lg overflow-hidden bg-zinc-900/50 px-1 py-1">
+            {Array.from({ length: 24 }, (_, i) => (
               <div
                 key={i}
                 className={`flex-1 hype-bar ${hypeBarClass}`}
-                style={{ height: barH, transition: "height 0.3s ease-out" }}
+                style={{ height: 3, transition: "height 0.3s ease-out" }}
               />
             ))}
           </div>
@@ -302,3 +310,16 @@ export default function MatchCard({ sport, index = 0, match }: MatchCardProps) {
     </motion.div>
   );
 }
+
+// React.memo with custom comparator — only re-render when score/status/live actually changes.
+// Prevents parent scroll updates from cascading re-renders into every card.
+export default memo(MatchCard, (prev, next) => {
+  return (
+    prev.match.scoreA === next.match.scoreA &&
+    prev.match.scoreB === next.match.scoreB &&
+    prev.match.status === next.match.status &&
+    prev.match.live === next.match.live &&
+    prev.match.id === next.match.id &&
+    prev.sport === next.sport
+  );
+});

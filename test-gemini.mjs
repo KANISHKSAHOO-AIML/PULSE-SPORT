@@ -1,6 +1,9 @@
+import fs from "fs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const key = "add your own api key"; // From .env.local without quotes
+const env = fs.readFileSync(".env.local", "utf8");
+const match = env.match(/GOOGLE_GENERATIVE_AI_API_KEY="([^"]+)"/);
+const key = match ? match[1] : "add your own api key";
 const genAI = new GoogleGenerativeAI(key);
 
 async function test() {

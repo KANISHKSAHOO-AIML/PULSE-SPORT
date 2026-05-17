@@ -2,11 +2,14 @@
  * PulseSports — Free Sports Data API Integration
  * 
  * Cricket: CricAPI (cricketdata.org) — free tier: 100 requests/day
+ *          Uses 3 API keys with automatic failover (see cricketApiKeys.ts)
  * Football: Football-Data.org — free tier: 10 requests/min
  * 
  * Usage:
  *   Set these env vars in .env.local:
- *     CRICKET_API_KEY=your_cricapi_key
+ *     CRICKET_API_KEY=primary_key
+ *     CRICKET_API_KEY_2=fallback_key_1
+ *     CRICKET_API_KEY_3=fallback_key_2
  *     FOOTBALL_API_KEY=your_football_data_key
  * 
  *   Get free keys at:
@@ -14,11 +17,11 @@
  *     https://www.football-data.org/client/register (sign up → API token)
  */
 
-// ═══════════════════════════════════════════════════════════════
-// CRICKET API — cricketdata.org
-// ═══════════════════════════════════════════════════════════════
+import { cricApiFetch } from "./cricketApiKeys";
 
-const CRICKET_API_BASE = "https://api.cricapi.com/v1";
+// ═══════════════════════════════════════════════════════════════
+// CRICKET API — cricketdata.org (with automatic key rotation)
+// ═══════════════════════════════════════════════════════════════
 
 export interface CricketMatch {
   id: string;
@@ -33,37 +36,58 @@ export interface CricketMatch {
   matchEnded: boolean;
 }
 
-/** Keywords to exclude from cricket matches (PSL and related) */
-const EXCLUDED_CRICKET_SERIES = [
-  "pakistan super league",
-  "psl",
-  "islamabad united",
-  "lahore qalandars",
-  "karachi kings",
-  "peshawar zalmi",
-  "quetta gladiators",
-  "multan sultans",
+/**
+ * STRICT WHITELIST — Only show these types of cricket matches:
+ * 1. Bangladesh vs Pakistan Test match
+ * 2. English County Cricket (County Championship, Vitality Blast, One-Day Cup, etc.)
+ * NO women's matches allowed.
+ */
+
+/** Keywords that identify a match as county cricket */
+const COUNTY_CRICKET_KEYWORDS = [
+  "county", "county championship", "vitality blast", "t20 blast",
+  "one-day cup", "royal london", "the hundred",
 ];
 
+/** Check if a match is the Bangladesh vs Pakistan Test */
+function isBanPakTest(name: string, series: string): boolean {
+  const text = `${name} ${series}`;
+  const hasBan = text.includes("bangladesh") || text.includes("ban ");
+  const hasPak = text.includes("pakistan") || text.includes("pak ");
+  const isTest = text.includes("test");
+  return hasBan && hasPak && isTest;
+}
+
+/** Check if a match is county cricket */
+function isCountyCricket(name: string, series: string): boolean {
+  const text = `${name} ${series}`;
+  return COUNTY_CRICKET_KEYWORDS.some(kw => text.includes(kw));
+}
+
+/** Check if a match is a women's match */
+function isWomensMatch(name: string, series: string): boolean {
+  const text = `${name} ${series}`;
+  return text.includes("women") || text.includes("wom ");
+}
+
 export async function fetchLiveCricketMatches(): Promise<CricketMatch[]> {
-  const key = process.env.CRICKET_API_KEY;
-  if (!key) return [];
-  
   try {
-    const res = await fetch(`${CRICKET_API_BASE}/currentMatches?apikey=${key}&offset=0`, {
+    const data = await cricApiFetch("currentMatches", { offset: "0" }, {
       next: { revalidate: 90 }, // Cache for 1m30s
     });
     
-    if (!res.ok) return [];
-    const data = await res.json();
+    if (!data || data.status !== "success" || !data.data) return [];
     
-    if (data.status !== "success" || !data.data) return [];
-    
-    // Filter out PSL matches — keep IPL, internationals, and other T20 leagues
+    // Strict whitelist: only Ban vs Pak Test + county cricket, no women's matches
     return (data.data as CricketMatch[]).filter((m) => {
       const name = (m.name || "").toLowerCase();
       const series = (m.series || "").toLowerCase();
-      return !EXCLUDED_CRICKET_SERIES.some(kw => name.includes(kw) || series.includes(kw));
+
+      // Block all women's matches first
+      if (isWomensMatch(name, series)) return false;
+
+      // Allow only: Ban vs Pak Test OR county cricket
+      return isBanPakTest(name, series) || isCountyCricket(name, series);
     });
   } catch {
     return [];
@@ -71,16 +95,11 @@ export async function fetchLiveCricketMatches(): Promise<CricketMatch[]> {
 }
 
 export async function fetchCricketMatchInfo(matchId: string) {
-  const key = process.env.CRICKET_API_KEY;
-  if (!key) return null;
-  
   try {
-    const res = await fetch(`${CRICKET_API_BASE}/match_info?apikey=${key}&id=${matchId}`, {
+    const data = await cricApiFetch("match_info", { id: matchId }, {
       next: { revalidate: 90 }, // Cache for 1m30s
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.status === "success" ? data.data : null;
+    return data?.status === "success" ? data.data : null;
   } catch {
     return null;
   }

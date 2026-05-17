@@ -1,8 +1,15 @@
 "use client";
 
 import { useRef, useMemo, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+
+// ─── Invalidator — triggers re-render only when scroll changes ──────
+function FrameInvalidator({ progress }: { progress: number }) {
+  const { invalidate } = useThree();
+  useEffect(() => { invalidate(); }, [progress, invalidate]);
+  return null;
+}
 
 // ─── Batsman ────────────────────────────────────────────────────────
 function Batsman({ progress }: { progress: number }) {
@@ -36,12 +43,12 @@ function Batsman({ progress }: { progress: number }) {
       </mesh>
       {/* Head */}
       <mesh position={[0, 2.0, 0]}>
-        <sphereGeometry args={[0.18, 16, 16]} />
+        <sphereGeometry args={[0.18, 12, 12]} />
         <meshStandardMaterial color="#f5cba7" roughness={0.6} />
       </mesh>
       {/* Helmet */}
       <mesh position={[0, 2.1, 0]}>
-        <sphereGeometry args={[0.22, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <sphereGeometry args={[0.22, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial color="#2c3e50" roughness={0.3} metalness={0.5} />
       </mesh>
       {/* Legs */}
@@ -150,7 +157,7 @@ function CricketBall({ progress }: { progress: number }) {
   return (
     <>
       <mesh ref={ref} position={[0, 1.1, 8]}>
-        <sphereGeometry args={[0.07, 16, 16]} />
+        <sphereGeometry args={[0.07, 10, 10]} />
         <meshStandardMaterial
           color="#cc0000"
           roughness={0.2}
@@ -292,13 +299,14 @@ function CameraController({ progress }: { progress: number }) {
 export default function CricketScene({ scrollProgress }: { scrollProgress: number }) {
   return (
     <Canvas
-      shadows
+      frameloop="demand"
       dpr={[1, 1.5]}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
       style={{ background: "transparent" }}
     >
+      <FrameInvalidator progress={scrollProgress} />
       <ambientLight intensity={0.3} />
-      <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow color="#ffe8cc" />
+      <directionalLight position={[5, 10, 5]} intensity={1.5} color="#ffe8cc" />
       <spotLight position={[-5, 8, -3]} intensity={0.8} angle={0.4} penumbra={0.5} color="#00ffff" />
       <spotLight position={[5, 8, 3]} intensity={0.6} angle={0.4} penumbra={0.5} color="#ffffff" />
       <pointLight position={[0, 5, 0]} intensity={0.3} color="#00ffff" />

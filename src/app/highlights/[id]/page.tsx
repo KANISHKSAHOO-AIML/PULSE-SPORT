@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, use, useRef } from "react";
+import { useState, useEffect, use } from "react";
 import { supabase } from "@/utils/supabase/client";
 import Header from "@/components/Header";
 import CommentSection from "@/components/CommentSection";
 import ShareButtons from "@/components/ShareButtons";
-import { ArrowLeft, Eye, ExternalLink } from "lucide-react";
+import { ArrowLeft, Eye, ExternalLink, Trophy } from "lucide-react";
 import Link from "next/link";
 
 /** Extract YouTube video ID from any YouTube URL format */
@@ -22,6 +22,13 @@ function getYouTubeId(url: string): string | null {
   return null;
 }
 
+/** Extract ScoreBat embed iframe src */
+function getScoreBatEmbedSrc(embedHtml: string): string | null {
+  if (!embedHtml) return null;
+  const match = embedHtml.match(/src='([^']+)'/) || embedHtml.match(/src="([^"]+)"/);
+  return match ? match[1] : null;
+}
+
 export default function HighlightDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [highlight, setHighlight] = useState<any>(null);
@@ -31,21 +38,36 @@ export default function HighlightDetailsPage({ params }: { params: Promise<{ id:
   useEffect(() => {
     const fetchHighlight = async () => {
       // Try Supabase first
-      const { data } = await supabase.from("highlights").select("*").eq("id", id).single();
-      if (data) {
-        setHighlight(data);
-      } else {
-        // Try the YouTube API route to find by ID
-        try {
-          const res = await fetch("/api/highlights");
-          if (res.ok) {
-            const json = await res.json();
-            const found = (json.highlights || []).find((h: any) => h.id === id);
-            if (found) {
-              setHighlight(found);
-            }
+      const isSupabaseId = !id.startsWith("sb-") && !id.startsWith("yt-");
+      if (isSupabaseId) {
+        const { data } = await supabase.from("highlights").select("*").eq("id", id).single();
+        if (data) {
+          setHighlight(data);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Try the highlights API route to find by ID
+      try {
+        const res = await fetch("/api/highlights");
+        if (res.ok) {
+          const json = await res.json();
+          const found = (json.highlights || []).find((h: any) => h.id === id);
+          if (found) {
+            setHighlight(found);
+            setLoading(false);
+            return;
           }
-        } catch {}
+        }
+      } catch {}
+
+      // Supabase fallback for non-prefixed IDs
+      if (!isSupabaseId) {
+        const { data } = await supabase.from("highlights").select("*").eq("id", id).single();
+        if (data) {
+          setHighlight(data);
+        }
       }
       setLoading(false);
     };
@@ -72,8 +94,12 @@ export default function HighlightDetailsPage({ params }: { params: Promise<{ id:
   );
 
   const accentColor = highlight.sport === "cricket" ? "text-cricket" : "text-football";
-  const accentBg = highlight.sport === "cricket" ? "bg-cricket" : "bg-football";
   const ytId = getYouTubeId(highlight.video_url || "");
+  const scoreBatSrc = getScoreBatEmbedSrc(highlight.embed_html || "");
+  const hasVideo = !!ytId || !!scoreBatSrc;
+
+  // Determine the embed source
+  const isScoreBat = highlight.source === "scorebat" && scoreBatSrc;
 
   return (
     <div className="min-h-screen bg-dark-bg text-foreground">
@@ -87,8 +113,18 @@ export default function HighlightDetailsPage({ params }: { params: Promise<{ id:
         <div className="mb-10 p-2 sm:p-3 bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
           <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden">
 
-            {/* YouTube embed — shows when ytId exists AND user clicked play */}
-            {ytId && playing ? (
+            {/* ScoreBat embed — plays directly */}
+            {isScoreBat && playing ? (
+              <iframe
+                className="absolute inset-0 w-full h-full"
+                src={scoreBatSrc!}
+                frameBorder="0"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                title={highlight.title}
+              />
+            ) : ytId && playing ? (
+              /* YouTube embed */
               <iframe
                 className="absolute inset-0 w-full h-full"
                 src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`}
@@ -109,12 +145,12 @@ export default function HighlightDetailsPage({ params }: { params: Promise<{ id:
 
                 {/* Play button */}
                 <button
-                  onClick={() => ytId ? setPlaying(true) : null}
+                  onClick={() => hasVideo ? setPlaying(true) : null}
                   className="absolute inset-0 flex items-center justify-center group"
                   aria-label="Play video"
                 >
                   <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300
-                    ${ytId
+                    ${hasVideo
                       ? "bg-white/10 backdrop-blur-md border-2 border-white/30 group-hover:scale-110 group-hover:bg-white/20 cursor-pointer"
                       : "bg-white/5 backdrop-blur-sm border border-white/10 cursor-not-allowed opacity-60"
                     }`}>
@@ -139,8 +175,18 @@ export default function HighlightDetailsPage({ params }: { params: Promise<{ id:
                   }`}>{highlight.sport}</span>
                 </div>
 
-                {/* "No video" banner when no YouTube URL */}
-                {!ytId && (
+                {/* Competition badge for ScoreBat */}
+                {highlight.competition && (
+                  <div className="absolute top-4 right-4">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md bg-black/60 text-zinc-300 border border-zinc-700 flex items-center gap-1.5">
+                      <Trophy className="w-3 h-3" />
+                      {highlight.competition}
+                    </span>
+                  </div>
+                )}
+
+                {/* "No video" banner when no embed available */}
+                {!hasVideo && (
                   <div className="absolute bottom-0 left-0 right-0 py-3 px-5 bg-black/80 backdrop-blur-sm text-center text-zinc-400 text-xs">
                     🎬 Full video not available — use the admin panel to add a YouTube URL
                   </div>
@@ -160,14 +206,31 @@ export default function HighlightDetailsPage({ params }: { params: Promise<{ id:
               <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-zinc-800 border border-zinc-700 ${accentColor}`}>
                 {highlight.sport}
               </span>
-              <span className="flex items-center gap-1.5">
-                <Eye className="w-4 h-4" /> {highlight.views} views
-              </span>
-              {highlight.video_url && (
+              {highlight.competition && (
+                <span className="px-2 py-0.5 rounded text-xs font-bold bg-zinc-800 border border-zinc-700 text-zinc-300">
+                  {highlight.competition}
+                </span>
+              )}
+              {highlight.views && highlight.views !== "—" && (
+                <span className="flex items-center gap-1.5">
+                  <Eye className="w-4 h-4" /> {highlight.views} views
+                </span>
+              )}
+              {highlight.created_at && (
+                <span className="text-zinc-500 text-xs">
+                  {new Date(highlight.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </span>
+              )}
+              {highlight.video_url && !highlight.video_url.includes("scorebat") && (
                 <a href={highlight.video_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors">
                   <ExternalLink className="w-3.5 h-3.5" /> Watch on YouTube
                 </a>
+              )}
+              {highlight.source && (
+                <span className="text-[10px] text-zinc-600 bg-zinc-800/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  via {highlight.source === "scorebat" ? "ScoreBat" : highlight.source === "youtube-rss" ? "YouTube" : highlight.source}
+                </span>
               )}
             </div>
           </div>

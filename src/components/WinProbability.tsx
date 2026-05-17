@@ -27,11 +27,12 @@ interface AIAnalysis {
 }
 
 function parseScore(score: string, sport: string): number {
+  const s = String(score || "");
   if (sport === "cricket") {
-    const runs = parseInt(score.split("/")[0]) || 0;
+    const runs = parseInt(s.split("/")[0]) || 0;
     return runs;
   }
-  return parseInt(score) || 0;
+  return parseInt(s) || 0;
 }
 
 export default function WinProbability({ match }: WinProbabilityProps) {
@@ -50,8 +51,8 @@ export default function WinProbability({ match }: WinProbabilityProps) {
   const total = scoreA + scoreB || 1;
 
   // Use AI probabilities if available, otherwise calculate from scores
-  const probA = aiAnalysis ? aiAnalysis.winProbability.teamA : Math.max(15, Math.min(85, (scoreA / total) * 100));
-  const probB = aiAnalysis ? aiAnalysis.winProbability.teamB : 100 - probA;
+  const probA = (aiAnalysis ? aiAnalysis.winProbability.teamA : Math.max(15, Math.min(85, (scoreA / total) * 100))) || 50;
+  const probB = (aiAnalysis ? aiAnalysis.winProbability.teamB : 100 - probA) || 50;
 
   // Generate probability curve
   const dataPoints = useMemo(() => {

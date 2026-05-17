@@ -5,6 +5,7 @@ import AIAssistant from "@/components/AIAssistant";
 import Footer from "@/components/Footer";
 import LiveTicker from "@/components/LiveTicker";
 import BackToTop from "@/components/BackToTop";
+import CinematicOverlay from "@/components/CinematicOverlay";
 
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
@@ -81,6 +82,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
+        <CinematicOverlay />
         <LiveTicker />
         {children}
         <Footer />

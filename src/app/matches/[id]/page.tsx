@@ -5,13 +5,15 @@ import { supabase } from "@/utils/supabase/client";
 import Header from "@/components/Header";
 import MatchCard from "@/components/MatchCard";
 import WinProbability from "@/components/WinProbability";
-import PlayerComparison from "@/components/PlayerComparison";
+import TeamHeadToHead from "@/components/TeamHeadToHead";
 import PulsePredictor from "@/components/PulsePredictor";
 import PredictionsMarket from "@/components/PredictionsMarket";
 import LiveTimeline from "@/components/LiveTimeline";
 import MatchReport from "@/components/MatchReport";
 import PulseCommentary from "@/components/PulseCommentary";
-import { Send, Users, Lock, MessageCircle, X, BarChart3, Trophy, MessageSquare, Activity, Brain, Target, Newspaper, ChevronLeft, Mic } from "lucide-react";
+import LiveMatchCenter from "@/components/LiveMatchCenter";
+import MyPredictions from "@/components/MyPredictions";
+import { Send, Users, Lock, MessageCircle, X, BarChart3, Trophy, MessageSquare, Activity, Brain, Target, Newspaper, ChevronLeft, Mic, Shield } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -19,7 +21,7 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"fanspace" | "timeline" | "analytics" | "predict" | "market" | "report" | "commentary">("analytics");
+  const [activeTab, setActiveTab] = useState<"fanspace" | "timeline" | "analytics" | "predict" | "market" | "report" | "commentary" | "squad11">("analytics");
   
   // Auth state
   const [user, setUser] = useState<any>(null);
@@ -71,7 +73,6 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
           const json = await res.json();
           const found = json.matches?.find((m: any) => String(m.id) === String(id));
           if (found) {
-            // Normalize to Supabase-like format
             setMatch({
               id: found.id,
               sport: found.sport,
@@ -90,7 +91,61 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
         }
       } catch {}
 
-      // 3. Neither source has the match
+      // 3. Fallback: Direct IPL schedule lookup (works for ALL IPL matches — past, today, future)
+      try {
+        const { getDynamicSchedule } = await import("@/lib/ipl2026Schedule");
+        const schedule = getDynamicSchedule();
+        const iplMatch = schedule.find(m => String(m.matchNo) === String(id));
+        if (iplMatch) {
+          setMatch({
+            id: String(iplMatch.matchNo),
+            sport: "cricket",
+            title: `${iplMatch.team1} vs ${iplMatch.team2}, IPL 2026 Match ${iplMatch.matchNo}`,
+            team_a: iplMatch.team1,
+            team_b: iplMatch.team2,
+            score_a: iplMatch.score1 || "—",
+            score_b: iplMatch.score2 || "—",
+            status: iplMatch.result || (iplMatch.status === "live" ? "In Progress" : iplMatch.status === "completed" ? "Completed" : "Match not started"),
+            live: iplMatch.status === "live",
+            date: iplMatch.date,
+            venue: iplMatch.venue,
+            matchNo: iplMatch.matchNo,
+            source: "ipl-schedule",
+          });
+          setLoading(false);
+          return;
+        }
+      } catch {}
+
+      // 4. Fallback: Check IPL API (for live score updates from CricAPI)
+      try {
+        const res = await fetch("/api/ipl");
+        if (res.ok) {
+          const json = await res.json();
+          const found = json.matches?.find((m: any) => String(m.id) === String(id) || String(m.matchNo) === String(id));
+          if (found) {
+            const teams = found.teams || [];
+            const scores = found.score || [];
+            setMatch({
+              id: found.id || id,
+              sport: "cricket",
+              title: found.name || `${teams[0]} vs ${teams[1]}`,
+              team_a: teams[0] || found.team1 || "TBA",
+              team_b: teams[1] || found.team2 || "TBA",
+              score_a: scores[0] ? `${scores[0].r}/${scores[0].w} (${scores[0].o})` : "—",
+              score_b: scores[1] ? `${scores[1].r}/${scores[1].w} (${scores[1].o})` : "—",
+              status: found.status || "Upcoming",
+              live: found.matchStarted && !found.matchEnded,
+              date: found.date || found.dateTimeGMT,
+              source: "ipl",
+            });
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {}
+
+      // 5. Neither source has the match
       setLoading(false);
     };
     fetchMatch();
@@ -283,6 +338,7 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
     { key: "timeline" as const, label: match.sport === "cricket" ? "Ball-by-Ball" : "Timeline", icon: Activity },
     { key: "report" as const, label: "AI Report", icon: Brain },
     { key: "predict" as const, label: "Predict", icon: Trophy },
+    { key: "squad11" as const, label: "Squad 11", icon: Shield },
     { key: "market" as const, label: "Market", icon: Target },
     { key: "fanspace" as const, label: match.live ? "Fan Space" : "Debate", icon: MessageSquare },
   ];
@@ -370,7 +426,7 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
               className="flex flex-col gap-6"
             >
               <WinProbability match={match} />
-              <PlayerComparison sport={match.sport} teamA={match.team_a} teamB={match.team_b} />
+              <TeamHeadToHead teamA={match.team_a} teamB={match.team_b} sport={match.sport} />
             </motion.div>
           )}
 
@@ -429,6 +485,29 @@ export default function MatchDetailsPage({ params }: { params: Promise<{ id: str
               transition={{ duration: 0.2 }}
             >
               <PulsePredictor match={match} />
+            </motion.div>
+          )}
+
+          {/* ─── Squad 11 Predictor Tab ─── */}
+          {activeTab === "squad11" && (
+            <motion.div
+              key="squad11"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col gap-6"
+            >
+              <LiveMatchCenter
+                key={`lmc-${match.id}`}
+                matchId={match.id}
+                teamA={match.team_a}
+                teamB={match.team_b}
+                matchTime={new Date(match.date || Date.now())}
+                isLive={match.live}
+                isCompleted={!match.live && match.status?.toLowerCase().includes("ended")}
+              />
+              <MyPredictions />
             </motion.div>
           )}
 

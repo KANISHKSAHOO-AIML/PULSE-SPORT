@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
+import { cricApiFetch } from "@/lib/cricketApiKeys";
 
 /**
  * Player Data API — Real cricket stats from CricAPI
  * 
  * Provides player search and stats lookup.
+ * Uses automatic key rotation across multiple CricAPI keys.
  * Football player stats use the curated data (no free API for player-level stats).
  */
-
-const CRICKET_API_BASE = "https://api.cricapi.com/v1";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,43 +15,33 @@ export async function GET(request: Request) {
   const query = searchParams.get("q") || "";
   const playerId = searchParams.get("id") || "";
 
-  const cricketKey = process.env.CRICKET_API_KEY;
-
   // If requesting specific player info from CricAPI
-  if (sport === "cricket" && playerId && cricketKey) {
+  if (sport === "cricket" && playerId) {
     try {
-      const res = await fetch(
-        `${CRICKET_API_BASE}/players_info?apikey=${cricketKey}&id=${playerId}`,
-        { next: { revalidate: 86400 } } // Cache 24h — player data doesn't change often
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.status === "success" && data.data) {
-          return NextResponse.json({
-            player: data.data,
-            source: "cricapi",
-          });
-        }
+      const data = await cricApiFetch("players_info", { id: playerId }, {
+        next: { revalidate: 86400 }, // Cache 24h — player data doesn't change often
+      });
+      if (data?.status === "success" && data.data) {
+        return NextResponse.json({
+          player: data.data,
+          source: "cricapi",
+        });
       }
     } catch {}
   }
 
   // Search players from CricAPI
-  if (sport === "cricket" && query && cricketKey) {
+  if (sport === "cricket" && query) {
     try {
-      const res = await fetch(
-        `${CRICKET_API_BASE}/players?apikey=${cricketKey}&offset=0&search=${encodeURIComponent(query)}`,
-        { next: { revalidate: 3600 } }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.status === "success" && data.data) {
-          return NextResponse.json({
-            players: data.data,
-            source: "cricapi",
-            count: data.data.length,
-          });
-        }
+      const data = await cricApiFetch("players", { offset: "0", search: query }, {
+        next: { revalidate: 3600 },
+      });
+      if (data?.status === "success" && data.data) {
+        return NextResponse.json({
+          players: data.data,
+          source: "cricapi",
+          count: data.data.length,
+        });
       }
     } catch {}
   }
