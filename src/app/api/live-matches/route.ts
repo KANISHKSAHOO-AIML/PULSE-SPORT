@@ -17,32 +17,33 @@ const supabase = createClient(
 const MAX_PER_SPORT = 4;
 
 /**
- * 2 real County Championship Div 1 matches (Round 6, May 15–18 2026)
- * Used as fallback when CricAPI doesn't return county data.
+ * 2 upcoming India vs Zimbabwe T20I matches (July 2026 series)
+ * India lead the 3-match series 1-0 after winning the 1st T20I on July 23.
+ * Used as fallback when CricAPI doesn't return these matches.
  */
-const COUNTY_FALLBACK: UnifiedMatch[] = [
+const IND_ZIM_FALLBACK: UnifiedMatch[] = [
   {
-    id: "county-1",
+    id: "ind-zim-t20i-2",
     sport: "cricket",
-    title: "County Championship Div 1 — Surrey vs Hampshire",
-    teamA: "Surrey",
-    teamB: "Hampshire",
+    title: "2nd T20I — India vs Zimbabwe",
+    teamA: "India",
+    teamB: "Zimbabwe",
     scoreA: "—",
     scoreB: "—",
-    status: "Day 3 in progress",
-    live: true,
+    status: "Jul 25 • Harare Sports Club",
+    live: false,
     source: "api",
   },
   {
-    id: "county-2",
+    id: "ind-zim-t20i-3",
     sport: "cricket",
-    title: "County Championship Div 1 — Essex vs Somerset",
-    teamA: "Essex",
-    teamB: "Somerset",
+    title: "3rd T20I — India vs Zimbabwe",
+    teamA: "India",
+    teamB: "Zimbabwe",
     scoreA: "—",
     scoreB: "—",
-    status: "Day 3 in progress",
-    live: true,
+    status: "Jul 26 • Harare Sports Club",
+    live: false,
     source: "api",
   },
 ];
@@ -58,19 +59,26 @@ export async function GET() {
       fetchTodayFootballMatches(),
     ]);
 
-    // Normalize cricket API data (already filtered to Ban vs Pak Test + county only)
-    const cricketAll: UnifiedMatch[] = [];
-    cricketMatches.forEach((m) => cricketAll.push(normalizeCricketMatch(m)));
+    // Normalize cricket API data
+    const cricketApi: UnifiedMatch[] = [];
+    cricketMatches.forEach((m) => cricketApi.push(normalizeCricketMatch(m)));
 
-    // If no county matches came from CricAPI, inject our 2 county fallbacks
-    const hasCounty = cricketAll.some(m =>
-      m.title.toLowerCase().includes("county") ||
-      m.title.toLowerCase().includes("vitality") ||
-      m.title.toLowerCase().includes("t20 blast")
+    // Always include India vs Zimbabwe T20I upcoming matches first,
+    // then fill remaining slots with live API matches
+    const hasIndZim = cricketApi.some(m =>
+      (m.title.toLowerCase().includes("india") && m.title.toLowerCase().includes("zimbabwe")) ||
+      (m.teamA?.toLowerCase().includes("india") && m.teamB?.toLowerCase().includes("zimbabwe"))
     );
-    if (!hasCounty) {
-      cricketAll.push(...COUNTY_FALLBACK);
+
+    const cricketAll: UnifiedMatch[] = [];
+    if (!hasIndZim) {
+      // Add our 2 IND vs ZIM cards first
+      cricketAll.push(...IND_ZIM_FALLBACK);
     }
+    // Fill remaining slots with live API matches
+    const remainingSlots = MAX_PER_SPORT - cricketAll.length;
+    cricketApi.sort((a, b) => (a.live && !b.live ? -1 : !a.live && b.live ? 1 : 0));
+    cricketAll.push(...cricketApi.slice(0, remainingSlots));
 
     // Normalize football — merge live + today, deduplicate
     const footballAll: UnifiedMatch[] = [];
@@ -86,21 +94,15 @@ export async function GET() {
     });
 
     // Sort: live matches first
-    const sortLiveFirst = (a: UnifiedMatch, b: UnifiedMatch) => {
-      if (a.live && !b.live) return -1;
-      if (!a.live && b.live) return 1;
-      return 0;
-    };
-    cricketAll.sort(sortLiveFirst);
-    footballAll.sort(sortLiveFirst);
+    footballAll.sort((a, b) => (a.live && !b.live ? -1 : !a.live && b.live ? 1 : 0));
 
     apiMatches = [
       ...cricketAll.slice(0, MAX_PER_SPORT),
       ...footballAll.slice(0, MAX_PER_SPORT),
     ];
   } catch {
-    // API failure — cricket gets county fallbacks only
-    apiMatches = [...COUNTY_FALLBACK];
+    // API failure — cricket gets IND vs ZIM fallbacks only
+    apiMatches = [...IND_ZIM_FALLBACK];
   }
 
   // 2. Only pull Supabase for FOOTBALL (never for cricket — no fake cricket data)

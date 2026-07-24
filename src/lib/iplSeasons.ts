@@ -6,7 +6,7 @@ export interface IPLSeason {
   pointsTable: { team: string; p: number; w: number; l: number; nr: number; nrr: string; pts: number }[];
 }
 
-// IPL 2026 Points Table — Hardcoded from official standings (as of May 16, 2026)
+// IPL 2026 Points Table — Final standings (season concluded May 31, 2026)
 
 export const IPL_SEASONS: IPLSeason[] = [
   { year:2008, winner:"RR", runnerUp:"CSK", finalVenue:"DY Patil, Mumbai", orangeCap:{player:"Shaun Marsh",team:"KXIP",runs:616}, purpleCap:{player:"Sohail Tanvir",team:"RR",wickets:22}, mvp:"Shane Watson", totalMatches:59,
@@ -45,6 +45,6 @@ export const IPL_SEASONS: IPLSeason[] = [
     pointsTable:[{team:"KKR",p:14,w:9,l:5,nr:0,nrr:"+1.428",pts:18},{team:"SRH",p:14,w:8,l:6,nr:0,nrr:"+0.414",pts:16},{team:"RR",p:14,w:8,l:6,nr:0,nrr:"+0.468",pts:16},{team:"RCB",p:14,w:7,l:7,nr:0,nrr:"+0.459",pts:14},{team:"CSK",p:14,w:7,l:7,nr:0,nrr:"+0.206",pts:14},{team:"DC",p:14,w:7,l:7,nr:0,nrr:"-0.377",pts:14},{team:"GT",p:14,w:5,l:9,nr:0,nrr:"-0.623",pts:10},{team:"LSG",p:14,w:5,l:9,nr:0,nrr:"-0.483",pts:10},{team:"MI",p:14,w:4,l:10,nr:0,nrr:"-0.318",pts:8},{team:"PBKS",p:14,w:5,l:9,nr:0,nrr:"-0.362",pts:10}]},
   { year:2025, winner:"RCB", runnerUp:"PBKS", finalVenue:"Narendra Modi Stadium, Ahmedabad", orangeCap:{player:"Sai Sudharsan",team:"GT",runs:759}, purpleCap:{player:"Prasidh Krishna",team:"GT",wickets:25}, mvp:"Suryakumar Yadav", totalMatches:74,
     pointsTable:[{team:"PBKS",p:14,w:9,l:4,nr:1,nrr:"+0.632",pts:19},{team:"RCB",p:14,w:9,l:4,nr:1,nrr:"+0.527",pts:19},{team:"GT",p:14,w:9,l:5,nr:0,nrr:"+0.481",pts:18},{team:"MI",p:14,w:8,l:6,nr:0,nrr:"+0.263",pts:16},{team:"DC",p:14,w:7,l:6,nr:1,nrr:"+0.104",pts:15},{team:"SRH",p:14,w:6,l:7,nr:1,nrr:"-0.089",pts:13},{team:"LSG",p:14,w:6,l:8,nr:0,nrr:"-0.215",pts:12},{team:"KKR",p:14,w:6,l:8,nr:0,nrr:"-0.318",pts:12},{team:"RR",p:14,w:4,l:10,nr:0,nrr:"-0.605",pts:8},{team:"CSK",p:14,w:4,l:10,nr:0,nrr:"-0.712",pts:8}]},
-  { year:2026, winner:"TBD", runnerUp:"TBD", finalVenue:"Narendra Modi Stadium, Ahmedabad", orangeCap:{player:"TBD",team:"TBD",runs:0}, purpleCap:{player:"TBD",team:"TBD",wickets:0}, mvp:"TBD", totalMatches:74,
-    pointsTable:[{team:"RCB",p:12,w:8,l:4,nr:0,nrr:"+1.053",pts:16},{team:"GT",p:13,w:8,l:5,nr:0,nrr:"+0.400",pts:16},{team:"SRH",p:12,w:7,l:5,nr:0,nrr:"+0.331",pts:14},{team:"PBKS",p:12,w:6,l:5,nr:1,nrr:"+0.355",pts:13},{team:"RR",p:11,w:6,l:5,nr:0,nrr:"+0.082",pts:12},{team:"CSK",p:12,w:6,l:6,nr:0,nrr:"+0.027",pts:12},{team:"KKR",p:12,w:5,l:6,nr:1,nrr:"-0.038",pts:11},{team:"DC",p:12,w:5,l:7,nr:0,nrr:"-0.993",pts:10},{team:"MI",p:12,w:4,l:8,nr:0,nrr:"-0.504",pts:8},{team:"LSG",p:12,w:4,l:8,nr:0,nrr:"-0.701",pts:8}] },
+  { year:2026, winner:"RCB", runnerUp:"GT", finalVenue:"Narendra Modi Stadium, Ahmedabad", orangeCap:{player:"Vaibhav Sooryavanshi",team:"RR",runs:776}, purpleCap:{player:"Kagiso Rabada",team:"GT",wickets:29}, mvp:"Vaibhav Sooryavanshi", totalMatches:74,
+    pointsTable:[{team:"RCB",p:14,w:9,l:5,nr:0,nrr:"+0.783",pts:18},{team:"GT",p:14,w:9,l:5,nr:0,nrr:"+0.695",pts:18},{team:"SRH",p:14,w:9,l:5,nr:0,nrr:"+0.524",pts:18},{team:"RR",p:14,w:8,l:6,nr:0,nrr:"+0.189",pts:16},{team:"PBKS",p:14,w:7,l:6,nr:1,nrr:"+0.309",pts:15},{team:"DC",p:14,w:7,l:7,nr:0,nrr:"-0.651",pts:14},{team:"KKR",p:14,w:6,l:7,nr:1,nrr:"-0.147",pts:13},{team:"CSK",p:14,w:6,l:8,nr:0,nrr:"-0.345",pts:12},{team:"MI",p:14,w:4,l:10,nr:0,nrr:"-0.584",pts:8},{team:"LSG",p:14,w:4,l:10,nr:0,nrr:"-0.740",pts:8}] },
 ];
